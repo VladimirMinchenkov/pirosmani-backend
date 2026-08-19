@@ -17,10 +17,11 @@
 ## Заметки для ИИ (Context)
 - Текущая задача: настройка фронтенда (веб + PWA), связка с Rails API
 - Роадмап:
-  1. Backend на Rails + PostgreSQL — готов ✅
+  1. Backend на Rails + PostgreSQL - установлена ✅
   2. Frontend (веб + PWA) — в работе 🔄
   3. Мобильные приложения (Android/iOS) — позже
 
 ## Журнал разработки
 - 18.08.2026: Инициализация репозитория, загрузка структуры проекта.
 - 18.08.2026: Принято решение о стеке — Rails + PostgreSQL (backend), React/Next.js (frontend, с прицелом на PWA и React Native).
+- 19.08.2026: Созданы модели в backend: Admin, ArchivedCart, Cart, Client, DeliveryZone, MenuItem, OrderItem, Order, Product, RefreshToken

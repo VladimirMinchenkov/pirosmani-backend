@@ -7,7 +7,9 @@
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins '*'   # на проде сузим до домена фронта
+    #origins '*'   # на проде сузим до домена фронта
+    # Указываем точный адрес нашего фронтенда
+    origins "http://localhost:3001"
 
     resource '*',
       headers: :any,

@@ -1,2 +1,6 @@
-class Api::V1::DeliveryZonesController < ApplicationController
-end
+module Api
+  module V1
+    class DeliveryZonesController < BaseController
+    end
+  end
+end  

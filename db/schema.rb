@@ -10,13 +10,22 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_08_18_162930) do
+ActiveRecord::Schema[7.0].define(version: 2026_08_19_193128) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
   create_table "admins", force: :cascade do |t|
     t.string "email"
     t.string "password_digest"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "access_token"
+    t.index ["access_token"], name: "index_admins_on_access_token", unique: true
+  end
+
+  create_table "app_settings", force: :cascade do |t|
+    t.string "key"
+    t.string "value"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
@@ -60,15 +69,18 @@ ActiveRecord::Schema[7.0].define(version: 2026_08_18_162930) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "access_token"
+    t.index ["access_token"], name: "index_clients_on_access_token", unique: true
     t.index ["phone"], name: "index_clients_on_phone", unique: true
   end
 
   create_table "delivery_zones", force: :cascade do |t|
     t.string "name"
-    t.jsonb "polygon"
     t.boolean "active"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "coordinates", default: []
+    t.decimal "price"
   end
 
   create_table "menu_items", force: :cascade do |t|
@@ -95,11 +107,12 @@ ActiveRecord::Schema[7.0].define(version: 2026_08_18_162930) do
   create_table "orders", force: :cascade do |t|
     t.string "status"
     t.string "address"
-    t.string "phone"
     t.decimal "total_price"
     t.decimal "delivery_price"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "client_id", null: false
+    t.index ["client_id"], name: "index_orders_on_client_id"
   end
 
   create_table "products", force: :cascade do |t|
@@ -127,5 +140,6 @@ ActiveRecord::Schema[7.0].define(version: 2026_08_18_162930) do
   add_foreign_key "carts", "clients"
   add_foreign_key "order_items", "menu_items"
   add_foreign_key "order_items", "orders"
+  add_foreign_key "orders", "clients"
   add_foreign_key "refresh_tokens", "clients"
 end

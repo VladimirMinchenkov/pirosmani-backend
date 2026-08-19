@@ -1,10 +1,15 @@
-class Api::V1::CartsController < ApplicationController
-  def show
-  end
+module Api
+  module V1
+    class CartsController < BaseController
+      def show
+      end
 
-  def update
-  end
+      def update
+      end
 
-  def destroy
+      def destroy
+      end
+    end
   end
-end
+end  
+

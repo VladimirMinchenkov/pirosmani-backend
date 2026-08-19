@@ -1,0 +1,857 @@
+=== FILE STRUCTURE ===
+.
+├── FETCH_HEAD
+├── Gemfile
+├── Gemfile.lock
+├── PROJECT.md
+├── Pirsomani-app.code-workspace
+├── README.md
+├── Rakefile
+├── app
+│   ├── channels
+│   │   └── application_cable
+│   │       ├── channel.rb
+│   │       └── connection.rb
+│   ├── controllers
+│   │   ├── admin
+│   │   │   ├── base_controller.rb
+│   │   │   └── v1
+│   │   │       ├── delivery_zones_controller.rb
+│   │   │       ├── menu_items_controller.rb
+│   │   │       ├── orders_controller.rb
+│   │   │       └── sessions_controller.rb
+│   │   ├── api
+│   │   │   └── v1
+│   │   │       ├── base_controller.rb
+│   │   │       ├── cart_items_controller.rb
+│   │   │       ├── carts_controller.rb
+│   │   │       ├── delivery_estimate_controller.rb
+│   │   │       ├── delivery_zones_controller.rb
+│   │   │       ├── menu_items_controller.rb
+│   │   │       ├── orders_controller.rb
+│   │   │       ├── phone_verifications_controller.rb
+│   │   │       └── sessions_controller.rb
+│   │   ├── application_controller.rb
+│   │   └── concerns
+│   ├── jobs
+│   │   └── application_job.rb
+│   ├── mailers
+│   │   └── application_mailer.rb
+│   ├── models
+│   │   ├── admin.rb
+│   │   ├── app_setting.rb
+│   │   ├── application_record.rb
+│   │   ├── archived_cart.rb
+│   │   ├── cart.rb
+│   │   ├── cart_item.rb
+│   │   ├── client.rb
+│   │   ├── concerns
+│   │   ├── delivery_zone.rb
+│   │   ├── menu_item.rb
+│   │   ├── order.rb
+│   │   ├── order_item.rb
+│   │   ├── product.rb
+│   │   └── refresh_token.rb
+│   ├── services
+│   │   ├── app_settings.rb
+│   │   └── carts
+│   │       └── merge_service.rb
+│   └── views
+│       └── layouts
+│           ├── mailer.html.erb
+│           └── mailer.text.erb
+├── bin
+│   ├── bundle
+│   ├── rails
+│   ├── rake
+│   └── setup
+├── config
+│   ├── application.rb
+│   ├── boot.rb
+│   ├── cable.yml
+│   ├── credentials.yml.enc
+│   ├── database.yml
+│   ├── environment.rb
+│   ├── environments
+│   │   ├── development.rb
+│   │   ├── production.rb
+│   │   └── test.rb
+│   ├── initializers
+│   │   ├── cors.rb
+│   │   ├── filter_parameter_logging.rb
+│   │   └── inflections.rb
+│   ├── locales
+│   │   └── en.yml
+│   ├── master.key
+│   ├── puma.rb
+│   ├── routes.rb
+│   └── storage.yml
+├── config.ru
+├── db
+│   ├── migrate
+│   │   ├── 20260818102105_create_menu_items.rb
+│   │   ├── 20260818102106_create_delivery_zones.rb
+│   │   ├── 20260818102107_create_orders.rb
+│   │   ├── 20260818102108_create_order_items.rb
+│   │   ├── 20260818102109_create_admins.rb
+│   │   ├── 20260818151441_create_clients.rb
+│   │   ├── 20260818151522_create_products.rb
+│   │   ├── 20260818151531_create_carts.rb
+│   │   ├── 20260818151538_create_cart_items.rb
+│   │   ├── 20260818151551_create_refresh_tokens.rb
+│   │   ├── 20260818151556_create_archived_carts.rb
+│   │   ├── 20260818151830_add_index_to_carts.rb
+│   │   ├── 20260818151845_add_index_to_carts_session_id.rb
+│   │   ├── 20260818152157_add_index_to_refresh_tokens_tokens.rb
+│   │   ├── 20260818153936_add_check_constraint_to_carts.rb
+│   │   ├── 20260818154732_make_client_id_nullable_on_carts.rb
+│   │   ├── 20260818162930_add_unique_index_to_cart_items.rb
+│   │   ├── 20260819082427_add_coordinates_to_delivery_zones.rb
+│   │   ├── 20260819105014_create_app_settings.rb
+│   │   ├── 20260819105453_add_price_to_delivery_zones.rb
+│   │   ├── 20260819120753_remove_polygon_from_delivery_zones.rb
+│   │   ├── 20260819121952_add_client_id_to_orders.rb
+│   │   ├── 20260819122118_remove_phone_from_orders.rb
+│   │   └── 20260819122834_add_access_token_to_admins.rb
+│   ├── schema.rb
+│   └── seeds.rb
+├── lib
+│   └── tasks
+├── public
+│   └── robots.txt
+├── rails_context.txt
+├── spec
+│   ├── factories
+│   │   ├── admins.rb
+│   │   ├── app_settings.rb
+│   │   ├── archived_carts.rb
+│   │   ├── cart_items.rb
+│   │   ├── carts.rb
+│   │   ├── clients.rb
+│   │   ├── delivery_zones.rb
+│   │   ├── menu_items.rb
+│   │   ├── order_items.rb
+│   │   ├── orders.rb
+│   │   ├── products.rb
+│   │   └── refresh_tokens.rb
+│   ├── models
+│   │   ├── admin_spec.rb
+│   │   ├── app_setting_spec.rb
+│   │   ├── archived_cart_spec.rb
+│   │   ├── cart_item_spec.rb
+│   │   ├── cart_spec.rb
+│   │   ├── client_spec.rb
+│   │   ├── delivery_zone_spec.rb
+│   │   ├── menu_item_spec.rb
+│   │   ├── order_item_spec.rb
+│   │   ├── order_spec.rb
+│   │   ├── product_spec.rb
+│   │   └── refresh_token_spec.rb
+│   ├── rails_helper.rb
+│   ├── requests
+│   │   ├── admin
+│   │   │   └── v1
+│   │   │       ├── delivery_zones_spec.rb
+│   │   │       ├── menu_items_spec.rb
+│   │   │       ├── orders_spec.rb
+│   │   │       └── sessions_spec.rb
+│   │   └── api
+│   │       └── v1
+│   │           ├── base_spec.rb
+│   │           ├── cart_items_spec.rb
+│   │           ├── carts_spec.rb
+│   │           ├── delivery_estimate_spec.rb
+│   │           ├── delivery_zones_spec.rb
+│   │           ├── menu_items_spec.rb
+│   │           ├── orders_spec.rb
+│   │           ├── phone_verifications_spec.rb
+│   │           └── sessions_spec.rb
+│   ├── services
+│   │   └── carts
+│   │       └── merge_service_spec.rb
+│   └── spec_helper.rb
+└── test
+    ├── channels
+    │   └── application_cable
+    │       └── connection_test.rb
+    ├── controllers
+    ├── fixtures
+    │   └── files
+    ├── integration
+    ├── mailers
+    ├── models
+    └── test_helper.rb
+
+47 directories, 135 files
+
+=== DATABASE SCHEMA ===
+# This file is auto-generated from the current state of the database. Instead
+# of editing this file, please use the migrations feature of Active Record to
+# incrementally modify your database, and then regenerate this schema definition.
+#
+# This file is the source Rails uses to define your schema when running `bin/rails
+# db:schema:load`. When creating a new database, `bin/rails db:schema:load` tends to
+# be faster and is potentially less error prone than running all of your
+# migrations from scratch. Old migrations may fail to apply correctly if those
+# migrations use external dependencies or application code.
+#
+# It's strongly recommended that you check this file into your version control system.
+
+ActiveRecord::Schema[7.0].define(version: 2026_08_19_122834) do
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "plpgsql"
+
+  create_table "admins", force: :cascade do |t|
+    t.string "email"
+    t.string "password_digest"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "access_token"
+    t.index ["access_token"], name: "index_admins_on_access_token", unique: true
+  end
+
+  create_table "app_settings", force: :cascade do |t|
+    t.string "key"
+    t.string "value"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "archived_carts", force: :cascade do |t|
+    t.bigint "client_id", null: false
+    t.jsonb "data"
+    t.string "reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id"], name: "index_archived_carts_on_client_id"
+  end
+
+  create_table "cart_items", force: :cascade do |t|
+    t.bigint "cart_id", null: false
+    t.bigint "product_id", null: false
+    t.integer "quantity"
+    t.decimal "price"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cart_id", "product_id"], name: "idx_cart_items_cart_product_unique", unique: true
+    t.index ["cart_id"], name: "index_cart_items_on_cart_id"
+    t.index ["product_id"], name: "index_cart_items_on_product_id"
+  end
+
+  create_table "carts", force: :cascade do |t|
+    t.bigint "client_id"
+    t.string "session_id"
+    t.integer "status"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id", "status"], name: "index_carts_on_client_id_and_status"
+    t.index ["client_id"], name: "index_carts_on_client_id"
+    t.index ["session_id"], name: "index_carts_on_session_id"
+    t.check_constraint "client_id IS NOT NULL AND session_id IS NULL OR client_id IS NULL AND session_id IS NOT NULL", name: "chk_carts_client_or_session"
+  end
+
+  create_table "clients", force: :cascade do |t|
+    t.string "phone"
+    t.datetime "phone_verified_at"
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["phone"], name: "index_clients_on_phone", unique: true
+  end
+
+  create_table "delivery_zones", force: :cascade do |t|
+    t.string "name"
+    t.boolean "active"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "coordinates", default: []
+    t.decimal "price"
+  end
+
+  create_table "menu_items", force: :cascade do |t|
+    t.string "name"
+    t.text "description"
+    t.decimal "price"
+    t.string "image_url"
+    t.boolean "available"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "order_items", force: :cascade do |t|
+    t.bigint "order_id", null: false
+    t.bigint "menu_item_id", null: false
+    t.integer "quantity"
+    t.decimal "price"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["menu_item_id"], name: "index_order_items_on_menu_item_id"
+    t.index ["order_id"], name: "index_order_items_on_order_id"
+  end
+
+  create_table "orders", force: :cascade do |t|
+    t.string "status"
+    t.string "address"
+    t.decimal "total_price"
+    t.decimal "delivery_price"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "client_id", null: false
+    t.index ["client_id"], name: "index_orders_on_client_id"
+  end
+
+  create_table "products", force: :cascade do |t|
+    t.string "name"
+    t.decimal "price"
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "refresh_tokens", force: :cascade do |t|
+    t.bigint "client_id", null: false
+    t.string "token"
+    t.datetime "expires_at"
+    t.datetime "revoked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id"], name: "index_refresh_tokens_on_client_id"
+    t.index ["token"], name: "index_refresh_tokens_on_token", unique: true
+  end
+
+  add_foreign_key "archived_carts", "clients"
+  add_foreign_key "cart_items", "carts"
+  add_foreign_key "cart_items", "products"
+  add_foreign_key "carts", "clients"
+  add_foreign_key "order_items", "menu_items"
+  add_foreign_key "order_items", "orders"
+  add_foreign_key "orders", "clients"
+  add_foreign_key "refresh_tokens", "clients"
+end
+
+=== ROUTES ===
+Rails.application.routes.draw do
+  namespace :api do
+    # Публичный API (для Next.js / мобильного клиента)
+    namespace :v1 do
+      # Авторизация клиента (телефон, сессии, refresh)
+      resource :phone_verifications, only: [:create]
+      resource :sessions, only: [:create, :destroy] do
+        post :refresh, on: :collection
+      end
+
+      # Корзина и товары
+      resources :carts, only: [:show, :update, :destroy]
+      resources :cart_items, only: [:create, :update, :destroy]
+
+      resources :menu_items, only: [:index, :show]
+      resources :orders, only: [:create, :show]
+
+      # Расчёт доставки: лучше GET, потому что это «получение цены по координатам», а не «создание оценки»
+      get :delivery_estimate, to: 'delivery_estimate#show'
+      # Если нужна сложная логика с сохранением запроса — тогда POST, но для цены достаточно GET
+    end
+  end
+
+  # Админ-API (отдельный неймспейс, чтобы чётко разделить права и документацию)
+  namespace :admin do
+    namespace :v1 do
+      # Авторизация админа
+      post :login, to: 'sessions#create'
+
+      # CRUD для админки
+      resources :delivery_zones
+      resources :menu_items
+      resources :orders, only: [:index, :show, :update]
+    end
+  end
+end
+
+
+=== MODELS & CONTROLLERS ===
+==> app/models/admin.rb <==
+class Admin < ApplicationRecord
+  has_secure_password
+  validates :email, presence: true, uniqueness: true
+
+  before_create :generate_access_token
+
+  private
+
+  def generate_access_token
+    self.access_token = SecureRandom.urlsafe_base64(32)
+  end
+end
+==> app/models/app_setting.rb <==
+class AppSetting < ApplicationRecord
+end
+
+==> app/models/application_record.rb <==
+class ApplicationRecord < ActiveRecord::Base
+  primary_abstract_class
+end
+
+==> app/models/archived_cart.rb <==
+class ArchivedCart < ApplicationRecord
+  belongs_to :client
+end
+
+==> app/models/cart.rb <==
+class Cart < ApplicationRecord
+  enum status: { active: 0, merged: 1, archived: 2 } 
+
+  belongs_to :client, optional: true
+  has_many :cart_items, dependent: :destroy
+  has_many :products, through: :cart_items
+  
+
+  validate :client_or_session_present
+
+  private
+
+  def client_or_session_present
+    if client_id.blank? && session_id.blank?
+      errors.add(:base, "Должен быть указан либо client_id, либо session_id")
+    end
+
+    if client_id.present? && session_id.present?
+      errors.add(:base, "Нельзя одновременно указывать и client_id, и session_id")
+    end
+  end
+end
+
+==> app/models/cart_item.rb <==
+# app/models/cart_item.rb
+class CartItem < ApplicationRecord
+  belongs_to :cart
+  belongs_to :product
+
+  validates :quantity, numericality: { greater_than: 0 }
+  validates :product_id, uniqueness: { scope: :cart_id }
+end
+
+==> app/models/client.rb <==
+class Client < ApplicationRecord
+end
+
+==> app/models/delivery_zone.rb <==
+# app/models/delivery_zone.rb
+class DeliveryZone < ApplicationRecord
+  has_many :orders
+
+  validates :name, presence: true
+  validates :price, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+
+  # coordinates - это jsonb колонка с массивом [[lng, lat], [lng, lat], ...]
+  validates :coordinates, presence: true, length: { minimum: 4 } # Минимум 3 точки + повтор первой
+
+  scope :active, -> { where(active: true) }
+
+  # Проверка: входит ли точка (lat, lng) в полигон?
+  # ВАЖНО: В базу мы кладем [lng, lat]. Здесь мы принимаем (lat, lng).
+  def contains_point?(lat, lng)
+    return false unless coordinates.is_a?(Array) && coordinates.size >= 4
+
+    # Ray Casting Algorithm
+    inside = false
+    j = coordinates.size - 1
+
+    coordinates.each_with_index do |current, i|
+      # current это [x, y] -> [lng, lat]
+      x1, y1 = current
+      x2, y2 = coordinates[j]
+
+      # Проверка пересечения луча, идущего вправо от точки, с ребром полигона
+      # Условие 1: точка лежит строго между широтами вершин ребра
+      # Условие 2: долгота точки меньше точки пересечения ребра с горизонтальной линией
+      if ((y1 > lat) != (y2 > lat)) &&
+         (lng < (x2 - x1) * (lat - y1) / (y2 - y1).to_f + x1)
+        inside = !inside
+      end
+
+      j = i
+    end
+
+    inside
+  end
+end
+
+==> app/models/menu_item.rb <==
+class MenuItem < ApplicationRecord
+  has_many :order_items
+  has_many :orders, through: :order_items
+
+  validates :name, presence: true
+  validates :price, numericality: { greater_than: 0 }
+end
+==> app/models/order.rb <==
+class Order < ApplicationRecord
+  belongs_to :delivery_zone
+  belongs_to :client
+
+  has_many :order_items, dependent: :destroy
+  has_many :menu_items, through: :order_items
+
+  validates :address, presence: true
+
+  enum status: { pending: 0, confirmed: 1, cooking: 2, delivering: 3, done: 4, cancelled: 5 }
+end
+==> app/models/order_item.rb <==
+class OrderItem < ApplicationRecord
+  belongs_to :order
+  belongs_to :menu_item
+
+  validates :quantity, numericality: { greater_than: 0 }
+end
+
+==> app/models/product.rb <==
+# app/models/product.rb
+class Product < ApplicationRecord
+  has_many :cart_items
+  has_many :carts, through: :cart_items
+end
+==> app/models/refresh_token.rb <==
+class RefreshToken < ApplicationRecord
+  belongs_to :client
+end
+
+==> app/controllers/admin/base_controller.rb <==
+# app/controllers/admin/base_controller.rb
+module Admin
+  class BaseController < ActionController::API
+    before_action :authenticate_admin!
+
+    private
+
+    def authenticate_admin!
+      # Ищем заголовок Authorization: Bearer <token>
+      auth_header = request.headers['Authorization']
+      return render json: { error: 'Missing authorization header' }, status: :unauthorized unless auth_header
+
+      token = auth_header.split(' ').last
+      return render json: { error: 'Invalid token format' }, status: :unauthorized unless token
+
+      # Находим админа по токену (обычно это поле в таблице admins, например `access_token`)
+      @current_admin = Admin.find_by(access_token: token)
+
+      if @current_admin.nil?
+        render json: { error: 'Invalid or expired admin token' }, status: :unauthorized
+      end
+    end
+
+    # Опционально: можно добавить проверку прав, если у админов будут роли
+    # def authorize_role!(required_role)
+    #   render json: { error: 'Insufficient permissions' }, status: :forbidden unless @current_admin.role == required_role
+    # end
+  end
+end
+
+==> app/controllers/admin/v1/delivery_zones_controller.rb <==
+module Admin
+  module V1
+    class SessionsController < Admin::BaseController
+      def create
+        admin = Admin.find_by(email: params[:email])
+        if admin && admin.authenticate(params[:password])
+          token = SecureRandom.hex(32)
+          # тут можно сохранить токен в Redis/БД и вернуть клиенту
+          render json: { token: token, admin: { id: admin.id, email: admin.email } }
+        else
+          render json: { error: 'Invalid credentials' }, status: :unauthorized
+        end
+      end
+    end
+  end
+end
+
+==> app/controllers/admin/v1/menu_items_controller.rb <==
+module Admin
+  module V1
+    class MenuItemsController < Admin::BaseController
+    end
+  end
+end
+
+==> app/controllers/admin/v1/orders_controller.rb <==
+module Admin
+  module V1
+    class OrdersController < Admin::BaseController
+    end
+  end
+end
+
+==> app/controllers/admin/v1/sessions_controller.rb <==
+module Admin
+  module V1
+    class SessionsController < ActionController::API
+      def create
+        admin = Admin.find_by(email: params[:email])
+        if admin && admin.authenticate(params[:password])
+          token = SecureRandom.hex(32)
+          # тут можно сохранить токен в Redis/БД и вернуть клиенту
+          render json: { token: token, admin: { id: admin.id, email: admin.email } }
+        else
+          render json: { error: 'Invalid credentials' }, status: :unauthorized
+        end
+      end
+    end
+  end
+end
+
+
+==> app/controllers/api/v1/base_controller.rb <==
+module Api
+  module V1
+    class BaseController < ActionController::API
+      rescue_from ActiveRecord::RecordNotFound, with: :not_found
+      rescue_from ActiveRecord::RecordInvalid, with: :unprocessable_entity
+
+      private
+
+      def not_found
+        render json: { error: "Record not found" }, status: :not_found
+      end
+
+      def unprocessable_entity(exception)
+        render json: { error: exception.message }, status: :unprocessable_entity
+      end
+    end
+  end
+end
+==> app/controllers/api/v1/cart_items_controller.rb <==
+module Api
+  module V1
+    class CartItemsController < BaseController
+      def create
+      end
+
+      def update
+      end
+
+      def destroy
+      end
+    end    
+  end
+end
+
+==> app/controllers/api/v1/carts_controller.rb <==
+module Api
+  module V1
+    class CartsController < BaseController
+      def show
+      end
+
+      def update
+      end
+
+      def destroy
+      end
+    end
+  end
+end  
+
+
+==> app/controllers/api/v1/delivery_estimate_controller.rb <==
+# app/controllers/api/v1/delivery_estimate_controller.rb
+module Api
+  module V1
+    class DeliveryEstimateController < BaseController
+      def show
+        lat = params[:lat]&.to_f
+        lng = params[:lng]&.to_f
+
+        unless lat && lng
+          return render json: { error: 'lat and lng are required' }, status: :bad_request
+        end
+
+        # Ищем первую активную зону, в которую попадает точка
+        # Так как зон немного, перебор в Ruby быстрее и проще сложного SQL
+        zone = DeliveryZone.active.find do |z|
+          z.contains_point?(lat, lng)
+        end
+
+        if zone
+          # Если у тебя фиксированная цена доставки, можно игнорировать цену из зоны
+          # или брать её, если админ решит менять.
+          render json: {
+            available: true,
+            price: 0, #zone.price.to_f, # Или константа 300.0, если цена фиксирована
+            zone_id: zone.id,
+            zone_name: zone.name
+          }
+        else
+          render json: { 
+            available: false, 
+            message: 'Delivery is not available at this address' 
+          }, status: :not_acceptable
+        end
+      end
+    end
+  end
+end
+
+==> app/controllers/api/v1/delivery_zones_controller.rb <==
+module Api
+  module V1
+    class DeliveryZonesController < BaseController
+    end
+  end
+end  
+
+==> app/controllers/api/v1/menu_items_controller.rb <==
+module Api
+  module V1
+    class MenuItemsController < BaseController
+      def index
+        menu_items = MenuItem.where(available: true)
+        render json: menu_items
+      end
+
+      def show
+        menu_item = MenuItem.find(params[:id])
+        render json: menu_item
+      end
+    end
+  end
+end
+
+==> app/controllers/api/v1/orders_controller.rb <==
+module Api
+  module V1
+    class OrdersController < BaseController
+      def index
+        orders = Order.includes(:order_items, :menu_items).order(created_at: :desc)
+        render json: orders, include: :order_items
+      end
+
+      def show
+        order = Order.includes(:order_items, :menu_items).find(params[:id])
+        render json: order, include: :order_items
+      end
+
+      def create
+        # 1. Сначала находим зону по координатам (алгоритм Ray Casting работает всегда)
+        lat = params.dig(:order, :lat)&.to_f
+        lng = params.dig(:order, :lng)&.to_f
+
+        unless lat && lng
+          return render json: { error: 'Coordinates required' }, status: :bad_request
+        end
+
+        zone = DeliveryZone.active.find do |z|
+          z.contains_point?(lat, lng)
+        end
+
+        unless zone
+          return render json: { error: 'Delivery not available here' }, status: :unprocessable_entity
+        end
+
+        # 2. Определяем стоимость доставки
+        delivery_price = 0.0
+        
+        if AppSettings.use_yandex_delivery?
+          # ЛОГИКА ЯНДЕКСА:
+          # Тут ты делаешь запрос к API Яндекс Доставки (или берешь из фронтенда, если он уже посчитал)
+          # Например, фронтенд прислал estimated_cost: 250.0
+          delivery_price = params.dig(:order, :estimated_cost) || 0.0 
+          # Важно: для Яндекса цена зоны (zone.price) игнорируется!
+        else
+          # ЛОГИКА СВОЕЙ СЛУЖБЫ:
+          if zone.price.present?
+            delivery_price = zone.price.to_f
+          else
+            # Если админ забыл поставить цену, но режим внутренний - ошибка
+            return render json: { error: 'Zone price is missing for internal delivery' }, status: :unprocessable_entity
+          end
+        end
+
+        # 3. Создаем заказ
+        order = Order.new(order_params)
+        order.client = current_client
+        order.delivery_zone = zone
+        order.status = 'pending'
+        order.delivery_price = delivery_price
+
+        total = calculate_items_total(order, order_items_params)
+        order.total_price = total + delivery_price
+
+        begin
+          Order.transaction do
+            order.save!  # если валидация падает — тут вылетит исключение
+
+            order_items_params.each do |item_params|
+              menu_item = MenuItem.find(item_params[:menu_item_id])
+              order.order_items.create!(
+                menu_item: menu_item,
+                quantity: item_params[:quantity].to_i,
+                price: menu_item.price
+              )
+            end
+          end
+
+          # Если дошли сюда — всё успешно
+          render json: order, include: :order_items, status: :created
+
+        rescue ActiveRecord::RecordInvalid => e
+          # Это покрывает и ошибки order.save!, и ошибки order_items.create!
+          render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
+        rescue ActiveRecord::RecordNotFound => e
+          render json: { error: 'One of the menu items was not found' }, status: :not_found
+        end
+      end
+
+      private
+
+      def calculate_items_total(order, items)
+        total = 0
+        items.each do |item|
+          menu_item = MenuItem.find(item[:menu_item_id])
+          qty = item[:quantity].to_i
+          order.order_items.build(menu_item: menu_item, quantity: qty, price: menu_item.price)
+          total += menu_item.price * qty
+        end
+        total
+      end
+
+      def order_params
+        params.require(:order).permit(:address, :phone, :delivery_price)
+      end
+
+      def order_items_params
+        params.require(:order).require(:order_items).map do |item|
+          item.permit(:menu_item_id, :quantity)
+        end
+      end
+    end
+  end
+end
+
+==> app/controllers/api/v1/phone_verifications_controller.rb <==
+module Api
+  module V1
+    class PhoneVerificationsController < BaseController
+      def create
+      end
+    end  
+  end
+end
+
+==> app/controllers/api/v1/sessions_controller.rb <==
+module Api
+  module V1
+    class SessionsController < BaseController
+      def create
+      end
+
+      def destroy
+      end
+
+      def refresh
+      end
+    end  
+  end
+end
+
+==> app/controllers/application_controller.rb <==
+class ApplicationController < ActionController::API
+end

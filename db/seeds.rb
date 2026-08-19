@@ -1,7 +1,23 @@
-# This file should contain all the record creation needed to seed the database with its default values.
-# The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
-#
-# Examples:
-#
-#   movies = Movie.create([{ name: "Star Wars" }, { name: "Lord of the Rings" }])
-#   Character.create(name: "Luke", movie: movies.first)
+## Удаляем старые тестовые зоны, чтобы не дублировать
+DeliveryZone.destroy_all
+
+# Полигон: [lng, lat] — обязательно замкнут (первая точка в конце)
+# Это прямоугольник вокруг центра Геленджика
+coordinates = [
+  [38.0500, 44.5600],
+  [38.0700, 44.5600],
+  [38.0700, 44.5800],
+  [38.0500, 44.5800],
+  [38.0500, 44.5600]  # замыкаем полигон
+]
+
+DeliveryZone.create!(
+  name: 'Брест центр',
+  active: true,
+  coordinates: coordinates
+)
+
+AppSetting.find_or_create_by(key: 'delivery_mode') do |s|
+  s.value = 'yandex' # или 'internal'
+end
+

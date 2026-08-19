@@ -1,10 +1,14 @@
-class Api::V1::CartItemsController < ApplicationController
-  def create
-  end
+module Api
+  module V1
+    class CartItemsController < BaseController
+      def create
+      end
 
-  def update
-  end
+      def update
+      end
 
-  def destroy
+      def destroy
+      end
+    end    
   end
 end
