@@ -27,3 +27,6 @@
 
 # Ignore master key for decrypting credentials and more.
 /config/master.key
+
+#Visual Studio Code workspace
+Pirsomani-app.code-workspace
