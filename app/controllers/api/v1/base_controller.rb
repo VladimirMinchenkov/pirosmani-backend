@@ -15,7 +15,9 @@ module Api
         end
 
         unless @current_client.present?
-          session_id = cookies[:client_session_id] || request.headers['X-Client-Session-Id']
+          #session_id = cookies[:client_session_id] || request.headers['X-Client-Session-Id']
+          session_id = request.headers['X-Client-Session-Id'] || params[:session_id]
+          
           cart = Cart.find_by(session_id: session_id) if session_id.present?
           @current_client = cart&.client if cart.present?
         end
