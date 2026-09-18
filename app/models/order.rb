@@ -2,6 +2,7 @@ class Order < ApplicationRecord
   belongs_to :delivery_zone, optional: true
   belongs_to :client
   belongs_to :client_address, optional: true
+  belongs_to :promo_code, optional: true
 
   has_many :order_items, dependent: :destroy
   has_many :menu_items, through: :order_items

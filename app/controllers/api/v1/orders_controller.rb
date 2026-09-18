@@ -27,10 +27,12 @@ module Api
         return render json: { error: delivery_price[:error] }, status: delivery_price[:status] if delivery_price[:error]
 
         order.delivery_price = delivery_price[:value]
-        order.total_price = calculate_items_total(order_items_params) + order.delivery_price
+        items_total = calculate_items_total(order_items_params)
+        order.total_price = apply_promo(items_total, order) + order.delivery_price
 
         Order.transaction do
           order.save!
+          order.promo_code&.increment_usage!
           create_order_items!(order)
         end
 
@@ -121,8 +123,14 @@ module Api
         end
       end
 
+      def apply_promo(items_total, order)
+        return items_total unless order.promo_code
+
+        order.promo_code.apply_to(items_total)
+      end
+
       def order_params
-        params.require(:order).permit(:order_type, :address, :scheduled_at, :client_address_id)
+        params.require(:order).permit(:order_type, :address, :scheduled_at, :client_address_id, :promo_code_id)
       end
 
       def order_items_params

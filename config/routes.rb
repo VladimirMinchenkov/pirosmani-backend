@@ -15,6 +15,11 @@ Rails.application.routes.draw do
       resources :menu_items, only: [:index, :show]
       resources :orders, only: [:index, :create, :show]
       resources :client_addresses, only: [:index, :create, :update, :destroy]
+      resources :promo_codes, only: [] do
+        collection do
+          post :validate
+        end
+      end
 
       # Расчёт доставки: лучше GET, потому что это «получение цены по координатам», а не «создание оценки»
       get :delivery_estimate, to: 'delivery_estimate#show'

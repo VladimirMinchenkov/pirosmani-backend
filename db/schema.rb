@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_18_187000) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_18_189000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -124,6 +124,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_18_187000) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "bonus_points", default: 0, null: false
     t.index ["phone"], name: "index_clients_on_phone", unique: true
   end
 
@@ -213,9 +214,22 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_18_187000) do
     t.datetime "scheduled_at"
     t.bigint "client_address_id"
     t.bigint "delivery_zone_id"
+    t.bigint "promo_code_id"
     t.index ["client_address_id"], name: "index_orders_on_client_address_id"
     t.index ["client_id"], name: "index_orders_on_client_id"
     t.index ["delivery_zone_id"], name: "index_orders_on_delivery_zone_id"
+    t.index ["promo_code_id"], name: "index_orders_on_promo_code_id"
+  end
+
+  create_table "otp_codes", force: :cascade do |t|
+    t.string "phone", null: false
+    t.string "code", null: false
+    t.datetime "verified_at"
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_otp_codes_on_expires_at"
+    t.index ["phone", "code"], name: "index_otp_codes_on_phone_and_code", unique: true
   end
 
   create_table "product_groups", force: :cascade do |t|
@@ -225,6 +239,21 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_18_187000) do
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_product_groups_on_name", unique: true
     t.index ["slug"], name: "index_product_groups_on_slug", unique: true
+  end
+
+  create_table "promo_codes", force: :cascade do |t|
+    t.string "code", null: false
+    t.string "discount_type", default: "fixed", null: false
+    t.decimal "discount_value", precision: 10, scale: 2, null: false
+    t.decimal "min_order_price", precision: 10, scale: 2, default: "0.0"
+    t.datetime "active_from"
+    t.datetime "active_until"
+    t.integer "usage_limit"
+    t.integer "usage_count", default: 0, null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_promo_codes_on_code", unique: true
   end
 
   create_table "refresh_tokens", force: :cascade do |t|
@@ -268,5 +297,6 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_18_187000) do
   add_foreign_key "orders", "client_addresses"
   add_foreign_key "orders", "clients"
   add_foreign_key "orders", "delivery_zones"
+  add_foreign_key "orders", "promo_codes"
   add_foreign_key "refresh_tokens", "clients"
 end

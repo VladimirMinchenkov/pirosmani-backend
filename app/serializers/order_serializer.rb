@@ -11,6 +11,7 @@ class OrderSerializer
       order_type: @order.order_type,
       address: @order.address,
       client_address: ClientAddressSerializer.new(@order.client_address).as_json,
+      promo_code: @order.promo_code&.code,
       scheduled_at: @order.scheduled_at,
       total_price: @order.total_price.to_f,
       delivery_price: @order.delivery_price.to_f,

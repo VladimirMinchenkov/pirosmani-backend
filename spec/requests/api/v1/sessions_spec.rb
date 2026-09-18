@@ -3,7 +3,8 @@ require 'rails_helper'
 RSpec.describe "Api::V1::Sessions", type: :request do
   describe "POST /api/v1/sessions" do
     it "creates a client if not exists and issues access + refresh tokens" do
-      post "/api/v1/sessions", params: { phone: "+79991234567" }
+      otp = OtpCode.generate_for("+79991234567")
+      post "/api/v1/sessions", params: { phone: "+79991234567", code: otp.code }
 
       expect(response).to have_http_status(:created)
       json = JSON.parse(response.body)
@@ -15,11 +16,36 @@ RSpec.describe "Api::V1::Sessions", type: :request do
 
     it "reuses existing client with the same phone" do
       client = create(:client, phone: "+79991234567")
+      otp = OtpCode.generate_for("+79991234567")
 
-      post "/api/v1/sessions", params: { phone: "+79991234567" }
+      post "/api/v1/sessions", params: { phone: "+79991234567", code: otp.code }
 
       json = JSON.parse(response.body)
       expect(json["client"]["id"]).to eq(client.id)
+    end
+
+    it "rejects invalid code" do
+      OtpCode.generate_for("+79991234567")
+      post "/api/v1/sessions", params: { phone: "+79991234567", code: "000000" }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "rejects expired code" do
+      otp = OtpCode.create!(phone: "+79991234567", code: "123456", expires_at: 1.hour.ago)
+      post "/api/v1/sessions", params: { phone: "+79991234567", code: otp.code }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "rejects missing phone" do
+      post "/api/v1/sessions", params: { code: "123456" }
+      expect(response).to have_http_status(:bad_request)
+    end
+
+    it "rejects missing code" do
+      post "/api/v1/sessions", params: { phone: "+79991234567" }
+      expect(response).to have_http_status(:bad_request)
     end
   end
 

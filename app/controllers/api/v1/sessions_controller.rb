@@ -4,20 +4,26 @@ module Api
     class SessionsController < BaseController
       def create
         phone = params[:phone]
+        return render json: { error: "phone is required" }, status: :bad_request if phone.blank?
 
-        # TODO (Фаза C, следующий шаг): проверка кода из PhoneVerification вместо доверия к номеру.
-        client = Client.find_by(phone: phone) || Client.create!(phone: phone, name: "Гость")
+        code = params[:code]
+        return render json: { error: "code is required" }, status: :bad_request if code.blank?
 
-        # Если есть активная гостевая корзина по session_id — привязываем к клиенту
+        unless verify_otp(phone, code)
+          return render json: { error: "Invalid or expired code" }, status: :unprocessable_entity
+        end
+
+        client = Client.find_by(phone: phone) || Client.create!(phone: phone, name: "Гость", phone_verified_at: Time.current)
+        client.update!(phone_verified_at: Time.current) if client.phone_verified_at.blank?
+
+        # Привязываем гостевую корзину, если есть
         session_id = request.headers["X-Client-Session-Id"] || params[:session_id]
         if session_id.present?
           cart = Cart.find_by(session_id: session_id)
-          if cart && cart.client_id.nil?
-            cart.update!(client: client)
-          end
+          cart&.update!(client: client) if cart&.client_id.nil?
         end
 
-        session = Auth::IssueClientSession.call(client)
+        session = Auth::IssueClientSession.call(client.reload)
         render json: session_payload(session), status: :created
       end
 
@@ -45,6 +51,12 @@ module Api
       end
 
       private
+
+      def verify_otp(phone, code)
+        return false if phone.blank? || code.blank?
+
+        OtpCode.active.where(phone: phone).order(created_at: :desc).any? { |otp| otp.verify!(code) }
+      end
 
       def session_payload(session)
         {
