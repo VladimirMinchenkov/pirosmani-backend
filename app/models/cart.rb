@@ -3,8 +3,8 @@ class Cart < ApplicationRecord
 
   belongs_to :client, optional: true
   has_many :cart_items, dependent: :destroy
-  has_many :products, through: :cart_items
-  
+  has_many :menu_items, through: :cart_items
+
 
   validate :client_or_session_present
 

@@ -11,12 +11,12 @@ module Carts
 
       ActiveRecord::Base.transaction do
         guest_cart.cart_items.each do |item|
-          existing_item = client_cart.cart_items.find_by(product_id: item.product_id)
+          existing_item = client_cart.cart_items.find_by(menu_item_id: item.menu_item_id)
 
           if existing_item
             existing_item.update!(quantity: existing_item.quantity + item.quantity)
           else
-            client_cart.cart_items.create!(product_id: item.product_id, quantity: item.quantity)
+            client_cart.cart_items.create!(menu_item_id: item.menu_item_id, quantity: item.quantity)
           end
         end
 

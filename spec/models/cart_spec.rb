@@ -4,7 +4,7 @@ require 'rails_helper'
 RSpec.describe Cart, type: :model do
   it { should belong_to(:client).optional }
   it { should have_many(:cart_items).dependent(:destroy) }
-  it { should have_many(:products).through(:cart_items) }
+  it { should have_many(:menu_items).through(:cart_items) }
 
   describe 'validations' do
     it 'валидна с client_id и без session_id' do

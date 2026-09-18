@@ -10,9 +10,29 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_18_172544) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_18_187000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "addon_groups", force: :cascade do |t|
+    t.string "name", null: false
+    t.integer "min_selection", default: 0, null: false
+    t.integer "max_selection"
+    t.boolean "required", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_addon_groups_on_name", unique: true
+  end
+
+  create_table "addons", force: :cascade do |t|
+    t.bigint "addon_group_id", null: false
+    t.string "name", null: false
+    t.decimal "price", precision: 10, scale: 2, default: "0.0", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["addon_group_id"], name: "index_addons_on_addon_group_id"
+  end
 
   create_table "admins", force: :cascade do |t|
     t.string "email"
@@ -37,6 +57,18 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_18_172544) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_archived_carts_on_client_id"
+  end
+
+  create_table "cart_item_addons", force: :cascade do |t|
+    t.bigint "cart_item_id", null: false
+    t.bigint "addon_id"
+    t.string "addon_name", null: false
+    t.decimal "addon_price", precision: 10, scale: 2, default: "0.0", null: false
+    t.integer "quantity", default: 1, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["addon_id"], name: "index_cart_item_addons_on_addon_id"
+    t.index ["cart_item_id"], name: "index_cart_item_addons_on_cart_item_id"
   end
 
   create_table "cart_items", force: :cascade do |t|
@@ -70,14 +102,28 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_18_172544) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "client_addresses", force: :cascade do |t|
+    t.bigint "client_id", null: false
+    t.string "label"
+    t.string "emoji"
+    t.string "street", null: false
+    t.string "entrance"
+    t.string "apt"
+    t.string "floor"
+    t.string "intercom"
+    t.decimal "lat", precision: 10, scale: 6
+    t.decimal "lng", precision: 10, scale: 6
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id"], name: "index_client_addresses_on_client_id"
+  end
+
   create_table "clients", force: :cascade do |t|
     t.string "phone"
     t.datetime "phone_verified_at"
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "access_token"
-    t.index ["access_token"], name: "index_clients_on_access_token", unique: true
     t.index ["phone"], name: "index_clients_on_phone", unique: true
   end
 
@@ -90,6 +136,26 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_18_172544) do
     t.decimal "price"
   end
 
+  create_table "menu_item_addon_groups", force: :cascade do |t|
+    t.bigint "menu_item_id", null: false
+    t.bigint "addon_group_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["addon_group_id"], name: "index_menu_item_addon_groups_on_addon_group_id"
+    t.index ["menu_item_id", "addon_group_id"], name: "idx_menu_item_addon_groups_unique", unique: true
+    t.index ["menu_item_id"], name: "index_menu_item_addon_groups_on_menu_item_id"
+  end
+
+  create_table "menu_item_tags", force: :cascade do |t|
+    t.bigint "menu_item_id", null: false
+    t.bigint "tag_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["menu_item_id", "tag_id"], name: "idx_menu_item_tags_unique", unique: true
+    t.index ["menu_item_id"], name: "index_menu_item_tags_on_menu_item_id"
+    t.index ["tag_id"], name: "index_menu_item_tags_on_tag_id"
+  end
+
   create_table "menu_items", force: :cascade do |t|
     t.string "name"
     t.text "description"
@@ -99,7 +165,29 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_18_172544) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "category_id"
+    t.bigint "product_group_id"
+    t.string "display_mode", default: "simple", null: false
+    t.string "weight_label"
+    t.integer "calories"
+    t.jsonb "allergens", default: [], null: false
+    t.string "sku"
+    t.integer "position", default: 0, null: false
     t.index ["category_id"], name: "index_menu_items_on_category_id"
+    t.index ["position"], name: "index_menu_items_on_position"
+    t.index ["product_group_id"], name: "index_menu_items_on_product_group_id"
+    t.index ["sku"], name: "index_menu_items_on_sku", unique: true
+  end
+
+  create_table "order_item_addons", force: :cascade do |t|
+    t.bigint "order_item_id", null: false
+    t.bigint "addon_id"
+    t.string "addon_name", null: false
+    t.decimal "addon_price", precision: 10, scale: 2, default: "0.0", null: false
+    t.integer "quantity", default: 1, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["addon_id"], name: "index_order_item_addons_on_addon_id"
+    t.index ["order_item_id"], name: "index_order_item_addons_on_order_item_id"
   end
 
   create_table "order_items", force: :cascade do |t|
@@ -121,7 +209,22 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_18_172544) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "client_id", null: false
+    t.string "order_type", default: "delivery", null: false
+    t.datetime "scheduled_at"
+    t.bigint "client_address_id"
+    t.bigint "delivery_zone_id"
+    t.index ["client_address_id"], name: "index_orders_on_client_address_id"
     t.index ["client_id"], name: "index_orders_on_client_id"
+    t.index ["delivery_zone_id"], name: "index_orders_on_delivery_zone_id"
+  end
+
+  create_table "product_groups", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_product_groups_on_name", unique: true
+    t.index ["slug"], name: "index_product_groups_on_slug", unique: true
   end
 
   create_table "refresh_tokens", force: :cascade do |t|
@@ -135,13 +238,35 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_18_172544) do
     t.index ["token"], name: "index_refresh_tokens_on_token", unique: true
   end
 
+  create_table "tags", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_tags_on_name", unique: true
+    t.index ["slug"], name: "index_tags_on_slug", unique: true
+  end
+
+  add_foreign_key "addons", "addon_groups"
   add_foreign_key "archived_carts", "clients"
+  add_foreign_key "cart_item_addons", "addons"
+  add_foreign_key "cart_item_addons", "cart_items"
   add_foreign_key "cart_items", "carts"
   add_foreign_key "cart_items", "menu_items"
   add_foreign_key "carts", "clients"
+  add_foreign_key "client_addresses", "clients"
+  add_foreign_key "menu_item_addon_groups", "addon_groups"
+  add_foreign_key "menu_item_addon_groups", "menu_items"
+  add_foreign_key "menu_item_tags", "menu_items"
+  add_foreign_key "menu_item_tags", "tags"
   add_foreign_key "menu_items", "categories"
+  add_foreign_key "menu_items", "product_groups"
+  add_foreign_key "order_item_addons", "addons"
+  add_foreign_key "order_item_addons", "order_items"
   add_foreign_key "order_items", "menu_items"
   add_foreign_key "order_items", "orders"
+  add_foreign_key "orders", "client_addresses"
   add_foreign_key "orders", "clients"
+  add_foreign_key "orders", "delivery_zones"
   add_foreign_key "refresh_tokens", "clients"
 end

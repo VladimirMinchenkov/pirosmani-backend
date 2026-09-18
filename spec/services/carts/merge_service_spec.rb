@@ -6,31 +6,31 @@ RSpec.describe Carts::MergeService do
     let(:client) { create(:client) }
     let(:client_cart) { create(:cart, :for_client, client: client) }
     let(:guest_cart) { create(:cart) }
-    let(:product) { create(:product) }
+    let(:menu_item) { create(:menu_item) }
 
     subject { described_class.new(guest_cart: guest_cart, client_cart: client_cart).call }
 
     context "когда товара нет в корзине клиента" do
-      let!(:guest_item) { create(:cart_item, cart: guest_cart, product: product, quantity: 2) }
+      let!(:guest_item) { create(:cart_item, cart: guest_cart, menu_item: menu_item, quantity: 2) }
 
       it "переносит товар в корзину клиента" do
         subject
-        expect(client_cart.cart_items.find_by(product: product).quantity).to eq(2)
+        expect(client_cart.cart_items.find_by(menu_item: menu_item).quantity).to eq(2)
       end
     end
 
     context "когда товар уже есть в корзине клиента" do
-      let!(:client_item) { create(:cart_item, cart: client_cart, product: product, quantity: 1) }
-      let!(:guest_item) { create(:cart_item, cart: guest_cart, product: product, quantity: 2) }
+      let!(:client_item) { create(:cart_item, cart: client_cart, menu_item: menu_item, quantity: 1) }
+      let!(:guest_item) { create(:cart_item, cart: guest_cart, menu_item: menu_item, quantity: 2) }
 
       it "суммирует количество" do
         subject
-        expect(client_cart.cart_items.find_by(product: product).quantity).to eq(3)
+        expect(client_cart.cart_items.find_by(menu_item: menu_item).quantity).to eq(3)
       end
     end
 
     context "удаляет гостевую корзину" do
-      let!(:guest_item) { create(:cart_item, cart: guest_cart, product: product, quantity: 1) }
+      let!(:guest_item) { create(:cart_item, cart: guest_cart, menu_item: menu_item, quantity: 1) }
 
       it "удаляет гостевую корзину после мерджа" do
         subject
