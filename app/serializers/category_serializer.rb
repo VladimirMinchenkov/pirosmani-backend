@@ -11,6 +11,7 @@ class CategorySerializer
       id: @category.id,
       name: @category.name,
       icon: @category.icon,
+      image_url: @category.image_url,
       position: @category.position
     }
   end
