@@ -1,4 +1,5 @@
 # Очистка старых данных (в обратном порядке зависимостей)
+AdminUser.delete_all
 OrderItemAddon.delete_all
 OrderItem.delete_all
 Order.delete_all
@@ -16,6 +17,15 @@ Category.delete_all
 PromoCode.delete_all
 DeliveryZone.delete_all
 AppSetting.delete_all
+
+# ============================================
+# AdminUser
+# ============================================
+AdminUser.create!(
+  email: 'admin@pirosmani.ru',
+  password: 'admin123',
+  password_confirmation: 'admin123'
+)
 
 # ============================================
 # AppSettings
