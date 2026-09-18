@@ -35,6 +35,12 @@ Rails.application.routes.draw do
 
       # CRUD для админки
       resources :delivery_zones
+      resources :categories
+      resources :tags
+      resources :product_groups
+      resources :addon_groups do
+        resources :addons, only: [:create, :update, :destroy]
+      end
       resources :menu_items
       resources :orders, only: [:index, :show, :update]
     end
