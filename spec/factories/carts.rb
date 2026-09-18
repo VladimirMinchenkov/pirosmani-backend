@@ -2,6 +2,7 @@ FactoryBot.define do
   factory :cart do
     session_id { SecureRandom.uuid }
     client_id { nil }
+    status { :active }
 
     trait :for_client do
       client

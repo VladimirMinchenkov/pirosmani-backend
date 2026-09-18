@@ -13,8 +13,8 @@ module Admin
       token = auth_header.split(' ').last
       return render json: { error: 'Invalid token format' }, status: :unauthorized unless token
 
-      # Находим админа по токену (обычно это поле в таблице admins, например `access_token`)
-      @current_admin = Admin.find_by(access_token: token)
+      # Находим админа по токену
+      @current_admin = AdminUser.find_by(access_token: token)
 
       if @current_admin.nil?
         render json: { error: 'Invalid or expired admin token' }, status: :unauthorized

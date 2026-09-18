@@ -5,4 +5,14 @@ class Tag < ApplicationRecord
 
   validates :name, presence: true, uniqueness: true
   validates :slug, presence: true, uniqueness: true
+
+  before_validation :generate_slug, on: [:create, :update]
+
+  private
+
+  def generate_slug
+    return if name.blank?
+
+    self.slug = name.parameterize if slug.blank?
+  end
 end

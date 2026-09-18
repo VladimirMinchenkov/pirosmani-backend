@@ -9,7 +9,7 @@ Rails.application.routes.draw do
       end
 
       # Корзина и товары
-      resources :carts, only: [:show, :update, :destroy]
+      resource :cart, only: [:show, :update, :destroy]
       resources :cart_items, only: [:create, :update, :destroy]
 
       resources :menu_items, only: [:index, :show]
