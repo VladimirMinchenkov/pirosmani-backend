@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :app_setting do
-    key { "MyString" }
-    value { "MyString" }
+    sequence(:key) { |n| "setting_#{n}" }
+    value { "default_value" }
   end
 end
