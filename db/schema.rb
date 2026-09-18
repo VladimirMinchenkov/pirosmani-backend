@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_08_19_193128) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_18_172544) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -41,14 +41,13 @@ ActiveRecord::Schema[7.0].define(version: 2026_08_19_193128) do
 
   create_table "cart_items", force: :cascade do |t|
     t.bigint "cart_id", null: false
-    t.bigint "product_id", null: false
     t.integer "quantity"
     t.decimal "price"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["cart_id", "product_id"], name: "idx_cart_items_cart_product_unique", unique: true
+    t.bigint "menu_item_id"
+    t.index ["cart_id", "menu_item_id"], name: "idx_cart_items_cart_menu_item_unique", unique: true
     t.index ["cart_id"], name: "index_cart_items_on_cart_id"
-    t.index ["product_id"], name: "index_cart_items_on_product_id"
   end
 
   create_table "carts", force: :cascade do |t|
@@ -61,6 +60,14 @@ ActiveRecord::Schema[7.0].define(version: 2026_08_19_193128) do
     t.index ["client_id"], name: "index_carts_on_client_id"
     t.index ["session_id"], name: "index_carts_on_session_id"
     t.check_constraint "client_id IS NOT NULL AND session_id IS NULL OR client_id IS NULL AND session_id IS NOT NULL", name: "chk_carts_client_or_session"
+  end
+
+  create_table "categories", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "icon"
+    t.integer "position", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "clients", force: :cascade do |t|
@@ -91,6 +98,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_08_19_193128) do
     t.boolean "available"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "category_id"
+    t.index ["category_id"], name: "index_menu_items_on_category_id"
   end
 
   create_table "order_items", force: :cascade do |t|
@@ -115,14 +124,6 @@ ActiveRecord::Schema[7.0].define(version: 2026_08_19_193128) do
     t.index ["client_id"], name: "index_orders_on_client_id"
   end
 
-  create_table "products", force: :cascade do |t|
-    t.string "name"
-    t.decimal "price"
-    t.text "description"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
   create_table "refresh_tokens", force: :cascade do |t|
     t.bigint "client_id", null: false
     t.string "token"
@@ -136,8 +137,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_08_19_193128) do
 
   add_foreign_key "archived_carts", "clients"
   add_foreign_key "cart_items", "carts"
-  add_foreign_key "cart_items", "products"
+  add_foreign_key "cart_items", "menu_items"
   add_foreign_key "carts", "clients"
+  add_foreign_key "menu_items", "categories"
   add_foreign_key "order_items", "menu_items"
   add_foreign_key "order_items", "orders"
   add_foreign_key "orders", "clients"

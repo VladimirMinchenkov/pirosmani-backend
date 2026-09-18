@@ -33,5 +33,9 @@ Rails.application.routes.draw do
       resources :orders, only: [:index, :show, :update]
     end
   end
+  # Webhooks для внешних сервисов
+  namespace :webhooks do
+    post :telegram, to: 'telegram#create'
+  end
 end
 
