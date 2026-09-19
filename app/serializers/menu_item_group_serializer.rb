@@ -10,7 +10,13 @@ class MenuItemGroupSerializer
     {
       id: @menu_item_group.id,
       name: @menu_item_group.name,
-      slug: @menu_item_group.slug
+      slug: @menu_item_group.slug,
+      category_id: @menu_item_group.category_id,
+      position_in_category: @menu_item_group.position_in_category,
+      min_total_quantity: @menu_item_group.min_total_quantity,
+      description: @menu_item_group.description,
+      image_url: @menu_item_group.image_url,
+      available: @menu_item_group.available
     }
   end
 end

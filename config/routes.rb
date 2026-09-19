@@ -41,9 +41,20 @@ Rails.application.routes.draw do
 
       # CRUD для админки
       resources :delivery_zones
-      resources :categories
+      resources :categories do
+        member do
+          patch :reorder, to: 'categories#reorder'
+        end
+      end
       resources :tags
-      resources :menu_item_groups
+      resources :menu_item_groups do
+        member do
+          patch :reorder_items, to: 'menu_item_groups#reorder_items'
+        end
+        member do
+          post :create_item, to: 'menu_item_groups#create_item'
+        end
+      end
       resources :addon_groups do
         resources :addons, only: [:create, :update, :destroy]
       end
