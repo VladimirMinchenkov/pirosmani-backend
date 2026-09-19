@@ -43,7 +43,7 @@ module Admin
       end
 
       def product_group_params
-        params.require(:product_group).permit(:name)
+        params.require(:product_group).permit(:name, :slug)
       end
     end
   end
