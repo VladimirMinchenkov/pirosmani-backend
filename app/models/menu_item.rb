@@ -20,7 +20,7 @@ class MenuItem < ApplicationRecord
   validates :position_in_category, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
   validates :position_in_group, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
 
-  validate :category_matches_group_category
+  before_validation :nilify_blank_positions
   validate :position_fields_mutex
 
   scope :standalone, -> { where(menu_item_group_id: nil) }
@@ -28,12 +28,9 @@ class MenuItem < ApplicationRecord
 
   private
 
-  def category_matches_group_category
-    return if menu_item_group.nil? || category.nil?
-
-    if category_id != menu_item_group.category_id
-      errors.add(:category_id, "must match menu_item_group's category")
-    end
+  def nilify_blank_positions
+    self.position_in_category = nil if position_in_category.blank?
+    self.position_in_group = nil if position_in_group.blank?
   end
 
   def position_fields_mutex
