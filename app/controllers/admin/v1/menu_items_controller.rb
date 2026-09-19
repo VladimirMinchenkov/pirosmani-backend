@@ -56,7 +56,7 @@ module Admin
           :category_id, :menu_item_group_id, :display_mode,
           :position_in_category, :position_in_group,
           :weight_label, :calories, :sku, :position,
-          allergens: []
+          allergens: [], tag_ids: [], addon_group_ids: []
         )
       end
 
