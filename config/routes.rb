@@ -43,6 +43,7 @@ Rails.application.routes.draw do
       resources :delivery_zones
       resources :categories do
         member do
+          get :content, to: 'categories#content'
           patch :reorder, to: 'categories#reorder'
         end
       end

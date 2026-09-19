@@ -34,12 +34,37 @@ module Admin
         head :no_content
       end
 
+      # GET /admin/v1/categories/:id/content
+      def content
+        category = Category.find(params[:id])
+        items = []
+
+        category.menu_items.standalone.order(:position_in_category).each do |mi|
+          items << { type: 'menu_item', id: mi.id, name: mi.name, price: mi.price, available: mi.available }
+        end
+
+        category.menu_item_groups.order(:position_in_category).each do |g|
+          items << { type: 'menu_item_group', id: g.id, name: g.name, items_count: g.menu_items.count, available: g.available }
+        end
+
+        items.sort_by! { |i| i[:position_in_category] || 0 }
+
+        render json: { category: CategorySerializer.new(category).as_json, content: items }
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: 'Category not found' }, status: :not_found
+      end
+
       # PATCH /admin/v1/categories/:id/content/reorder
       def reorder
         category = Category.find(params[:id])
         items_data = params.require(:items)
 
         ActiveRecord::Base.transaction do
+          # Сначала сбрасываем все позиции в отрицательные, чтобы избежать конфликтов
+          category.menu_items.standalone.update_all(position_in_category: -1)
+          category.menu_item_groups.update_all(position_in_category: -1)
+
+          # Затем устанавливаем финальные позиции
           items_data.each do |item_data|
             case item_data[:type]
             when 'menu_item'
