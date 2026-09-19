@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_18_210551) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_19_164924) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -150,6 +150,22 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_18_210551) do
     t.index ["menu_item_id"], name: "index_menu_item_addon_groups_on_menu_item_id"
   end
 
+  create_table "menu_item_groups", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "category_id"
+    t.integer "position_in_category", default: 0, null: false
+    t.integer "min_total_quantity"
+    t.text "description"
+    t.string "image_url"
+    t.boolean "available", default: true, null: false
+    t.index ["category_id", "position_in_category"], name: "idx_menu_item_groups_cat_pos_unique", unique: true
+    t.index ["name"], name: "index_menu_item_groups_on_name", unique: true
+    t.index ["slug"], name: "index_menu_item_groups_on_slug", unique: true
+  end
+
   create_table "menu_item_tags", force: :cascade do |t|
     t.bigint "menu_item_id", null: false
     t.bigint "tag_id", null: false
@@ -169,16 +185,20 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_18_210551) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "category_id"
-    t.bigint "product_group_id"
+    t.bigint "menu_item_group_id"
     t.string "display_mode", default: "simple", null: false
     t.string "weight_label"
     t.integer "calories"
     t.jsonb "allergens", default: [], null: false
     t.string "sku"
     t.integer "position", default: 0, null: false
+    t.integer "position_in_category"
+    t.integer "position_in_group"
+    t.index ["category_id", "position_in_category"], name: "idx_menu_items_cat_pos_unique", unique: true, where: "(menu_item_group_id IS NULL)"
     t.index ["category_id"], name: "index_menu_items_on_category_id"
+    t.index ["menu_item_group_id", "position_in_group"], name: "idx_menu_items_group_pos_unique", unique: true, where: "(menu_item_group_id IS NOT NULL)"
+    t.index ["menu_item_group_id"], name: "index_menu_items_on_menu_item_group_id"
     t.index ["position"], name: "index_menu_items_on_position"
-    t.index ["product_group_id"], name: "index_menu_items_on_product_group_id"
     t.index ["sku"], name: "index_menu_items_on_sku", unique: true
   end
 
@@ -235,15 +255,6 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_18_210551) do
     t.index ["phone", "code"], name: "index_otp_codes_on_phone_and_code", unique: true
   end
 
-  create_table "product_groups", force: :cascade do |t|
-    t.string "name", null: false
-    t.string "slug", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_product_groups_on_name", unique: true
-    t.index ["slug"], name: "index_product_groups_on_slug", unique: true
-  end
-
   create_table "promo_codes", force: :cascade do |t|
     t.string "code", null: false
     t.string "discount_type", default: "fixed", null: false
@@ -292,7 +303,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_18_210551) do
   add_foreign_key "menu_item_tags", "menu_items"
   add_foreign_key "menu_item_tags", "tags"
   add_foreign_key "menu_items", "categories"
-  add_foreign_key "menu_items", "product_groups"
+  add_foreign_key "menu_items", "menu_item_groups"
   add_foreign_key "order_item_addons", "addons"
   add_foreign_key "order_item_addons", "order_items"
   add_foreign_key "order_items", "menu_items"

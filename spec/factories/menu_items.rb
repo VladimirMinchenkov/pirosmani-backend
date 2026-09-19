@@ -12,7 +12,6 @@ FactoryBot.define do
     sequence(:sku) { |n| "SKU-#{n}" }
     sequence(:position) { |n| n }
     category
-    product_group
 
     trait :unavailable do
       available { false }

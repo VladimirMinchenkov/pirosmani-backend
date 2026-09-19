@@ -2,7 +2,7 @@ class MenuItem < ApplicationRecord
   DISPLAY_MODES = %w[simple variant_picker].freeze
 
   belongs_to :category, optional: true
-  belongs_to :product_group, optional: true
+  belongs_to :menu_item_group, optional: true
   has_many :order_items
   has_many :orders, through: :order_items
   has_many :cart_items
@@ -17,4 +17,31 @@ class MenuItem < ApplicationRecord
   validates :calories, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :sku, uniqueness: true, allow_nil: true
+  validates :position_in_category, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :position_in_group, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
+
+  validate :category_matches_group_category
+  validate :position_fields_mutex
+
+  scope :standalone, -> { where(menu_item_group_id: nil) }
+  scope :in_group, -> { where.not(menu_item_group_id: nil) }
+
+  private
+
+  def category_matches_group_category
+    return if menu_item_group.nil? || category.nil?
+
+    if category_id != menu_item_group.category_id
+      errors.add(:category_id, "must match menu_item_group's category")
+    end
+  end
+
+  def position_fields_mutex
+    if menu_item_group_id.present? && position_in_category.present?
+      errors.add(:position_in_category, "must be blank for items in a group")
+    end
+    if menu_item_group_id.nil? && position_in_group.present?
+      errors.add(:position_in_group, "must be blank for standalone items")
+    end
+  end
 end

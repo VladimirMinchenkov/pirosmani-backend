@@ -12,7 +12,7 @@ MenuItem.delete_all
 Addon.delete_all
 AddonGroup.delete_all
 Tag.delete_all
-ProductGroup.delete_all
+MenuItemGroup.delete_all
 Category.delete_all
 PromoCode.delete_all
 DeliveryZone.delete_all
@@ -58,12 +58,12 @@ drinks_cat = Category.create!(name: 'Напитки', icon: '🥤', position: 3)
 desserts_cat = Category.create!(name: 'Десерты', icon: '🍰', position: 4)
 
 # ============================================
-# ProductGroups
+# MenuItemGroups
 # ============================================
-pizza_group = ProductGroup.create!(name: 'Пицца')
-rolls_group = ProductGroup.create!(name: 'Роллы')
-drinks_group = ProductGroup.create!(name: 'Напитки')
-desserts_group = ProductGroup.create!(name: 'Десерты')
+pizza_group = MenuItemGroup.create!(name: 'Пицца')
+rolls_group = MenuItemGroup.create!(name: 'Роллы')
+drinks_group = MenuItemGroup.create!(name: 'Напитки')
+desserts_group = MenuItemGroup.create!(name: 'Десерты')
 
 # ============================================
 # Tags
@@ -110,7 +110,7 @@ margherita = MenuItem.create!(
   image_url: 'https://example.com/margherita.jpg',
   available: true,
   category: pizza_cat,
-  product_group: pizza_group,
+  menu_item_group: pizza_group,
   display_mode: 'simple',
   weight_label: '400 г',
   calories: 850,
@@ -128,7 +128,7 @@ pepperoni = MenuItem.create!(
   image_url: 'https://example.com/pepperoni.jpg',
   available: true,
   category: pizza_cat,
-  product_group: pizza_group,
+  menu_item_group: pizza_group,
   display_mode: 'simple',
   weight_label: '420 г',
   calories: 920,
@@ -146,7 +146,7 @@ four_cheese = MenuItem.create!(
   image_url: 'https://example.com/four-cheese.jpg',
   available: true,
   category: pizza_cat,
-  product_group: pizza_group,
+  menu_item_group: pizza_group,
   display_mode: 'simple',
   weight_label: '400 г',
   calories: 980,
@@ -164,7 +164,7 @@ philadelphia = MenuItem.create!(
   image_url: 'https://example.com/philadelphia.jpg',
   available: true,
   category: rolls_cat,
-  product_group: rolls_group,
+  menu_item_group: rolls_group,
   display_mode: 'simple',
   weight_label: '250 г',
   calories: 450,
@@ -182,7 +182,7 @@ caesar_roll = MenuItem.create!(
   image_url: 'https://example.com/caesar-roll.jpg',
   available: true,
   category: rolls_cat,
-  product_group: rolls_group,
+  menu_item_group: rolls_group,
   display_mode: 'simple',
   weight_label: '240 г',
   calories: 380,
@@ -199,7 +199,7 @@ cola = MenuItem.create!(
   image_url: 'https://example.com/cola.jpg',
   available: true,
   category: drinks_cat,
-  product_group: drinks_group,
+  menu_item_group: drinks_group,
   display_mode: 'variant_picker',
   weight_label: nil,
   calories: 140,
@@ -216,7 +216,7 @@ water = MenuItem.create!(
   image_url: 'https://example.com/water.jpg',
   available: true,
   category: drinks_cat,
-  product_group: drinks_group,
+  menu_item_group: drinks_group,
   display_mode: 'variant_picker',
   weight_label: nil,
   calories: 0,
@@ -233,7 +233,7 @@ tiramisu = MenuItem.create!(
   image_url: 'https://example.com/tiramisu.jpg',
   available: true,
   category: desserts_cat,
-  product_group: desserts_group,
+  menu_item_group: desserts_group,
   display_mode: 'simple',
   weight_label: '150 г',
   calories: 320,
@@ -276,6 +276,6 @@ PromoCode.create!(
   usage_count: 0
 )
 
-puts "Seeds loaded: #{Category.count} categories, #{ProductGroup.count} product groups, #{Tag.count} tags"
+puts "Seeds loaded: #{Category.count} categories, #{MenuItemGroup.count} product groups, #{Tag.count} tags"
 puts "#{AddonGroup.count} addon groups, #{Addon.count} addons, #{MenuItem.count} menu items"
 puts "#{PromoCode.count} promo codes, #{DeliveryZone.count} delivery zones, #{AppSetting.count} app settings"

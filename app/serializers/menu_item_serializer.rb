@@ -20,7 +20,7 @@ class MenuItemSerializer
       display_mode: @menu_item.display_mode,
       category: CategorySerializer.new(@menu_item.category).as_json,
       tags: @menu_item.tags.map { |tag| TagSerializer.new(tag).as_json },
-      product_group: ProductGroupSerializer.new(@menu_item.product_group).as_json,
+      menu_item_group: MenuItemGroupSerializer.new(@menu_item.menu_item_group).as_json,
       addon_groups: @menu_item.addon_groups.map { |group| AddonGroupSerializer.new(group).as_json }
     }
   end

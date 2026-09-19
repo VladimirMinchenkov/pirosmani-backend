@@ -39,7 +39,7 @@ Rails.application.routes.draw do
       resources :delivery_zones
       resources :categories
       resources :tags
-      resources :product_groups
+      resources :menu_item_groups
       resources :addon_groups do
         resources :addons, only: [:create, :update, :destroy]
       end

@@ -3,7 +3,7 @@ require 'rails_helper'
 RSpec.describe MenuItem, type: :model do
   describe 'associations' do
     it { should belong_to(:category).optional }
-    it { should belong_to(:product_group).optional }
+    it { should belong_to(:menu_item_group).optional }
     it { should have_many(:order_items) }
     it { should have_many(:orders).through(:order_items) }
     it { should have_many(:cart_items) }

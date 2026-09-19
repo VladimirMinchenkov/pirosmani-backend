@@ -1,7 +1,7 @@
 module Admin
   module V1
     class MenuItemsController < Admin::BaseController
-      INCLUDES = [:category, :tags, :product_group, { addon_groups: :addons }].freeze
+      INCLUDES = [:category, :tags, :menu_item_group, { addon_groups: :addons }].freeze
 
       before_action :set_menu_item, only: [:show, :update, :destroy]
 
@@ -53,7 +53,7 @@ module Admin
       def menu_item_params
         params.require(:menu_item).permit(
           :name, :description, :price, :image_url, :available,
-          :category_id, :product_group_id, :display_mode,
+          :category_id, :menu_item_group_id, :display_mode,
           :weight_label, :calories, :sku, :position,
           allergens: []
         )

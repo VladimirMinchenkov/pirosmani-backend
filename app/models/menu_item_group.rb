@@ -1,11 +1,14 @@
-# app/models/product_group.rb
-class ProductGroup < ApplicationRecord
-  has_many :menu_items, dependent: :nullify
+class MenuItemGroup < ApplicationRecord
+  belongs_to :category, optional: true
+  has_many :menu_items, -> { order(:position_in_group) }, dependent: :restrict_with_error
 
   validates :name, presence: true, uniqueness: true
   validates :slug, presence: true, uniqueness: true
+  validates :position_in_category, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   before_validation :generate_slug, on: [:create, :update]
+
+  scope :ordered, -> { order(:position_in_category) }
 
   private
 

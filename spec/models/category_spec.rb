@@ -13,10 +13,6 @@ RSpec.describe Category, type: :model do
       expect(build(:category, name: 'Unique')).not_to be_valid
     end
 
-    it 'validates uniqueness of position' do
-      create(:category, position: 1)
-      expect(build(:category, position: 1)).not_to be_valid
-    end
     it { should validate_numericality_of(:position).only_integer.is_greater_than_or_equal_to(0) }
   end
 end

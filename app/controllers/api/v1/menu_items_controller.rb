@@ -1,7 +1,7 @@
 module Api
   module V1
     class MenuItemsController < BaseController
-      INCLUDES = [:category, :tags, :product_group, { addon_groups: :addons }].freeze
+      INCLUDES = [:category, :tags, :menu_item_group, { addon_groups: :addons }].freeze
 
       def index
         menu_items = MenuItem.where(available: true).includes(INCLUDES).order(:position)

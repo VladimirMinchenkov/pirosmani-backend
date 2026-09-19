@@ -4,12 +4,12 @@ RSpec.describe "Admin::V1::MenuItems", type: :request do
   let(:admin_user) { create(:admin_user) }
   let(:headers) { auth_headers(admin_user) }
   let(:category) { create(:category) }
-  let(:product_group) { create(:product_group) }
+  let(:menu_item_group) { create(:menu_item_group) }
 
   describe 'GET /admin/v1/menu_items' do
     it 'returns all menu items with includes' do
-      create(:menu_item, name: 'Pizza', category: category, product_group: product_group)
-      create(:menu_item, name: 'Burger', category: category, product_group: product_group)
+      create(:menu_item, name: 'Pizza', category: category, menu_item_group: menu_item_group)
+      create(:menu_item, name: 'Burger', category: category, menu_item_group: menu_item_group)
 
       get '/admin/v1/menu_items', headers: headers
 
@@ -42,7 +42,7 @@ RSpec.describe "Admin::V1::MenuItems", type: :request do
                name: 'New Pizza',
                price: 12.99,
                category_id: category.id,
-               product_group_id: product_group.id,
+               menu_item_group_id: menu_item_group.id,
                display_mode: 'simple',
                tag_ids: [tag.id],
                addon_group_ids: [addon_group.id]
