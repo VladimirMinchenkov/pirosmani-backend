@@ -13,7 +13,11 @@ Rails.application.routes.draw do
       resources :cart_items, only: [:create, :update, :destroy]
 
       resources :menu_items, only: [:index, :show]
-      resources :categories, only: [:index]
+      resources :categories, only: [:index] do
+        member do
+          get :menu
+        end
+      end
       resources :app_settings, only: [:index]
       resources :orders, only: [:index, :create, :show]
       resources :client_addresses, only: [:index, :create, :update, :destroy]
