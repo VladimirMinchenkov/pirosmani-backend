@@ -1,6 +1,4 @@
 class MenuItem < ApplicationRecord
-  DISPLAY_MODES = %w[simple variant_picker].freeze
-
   belongs_to :category, optional: true
   belongs_to :menu_item_group, optional: true
   has_many :order_items
@@ -13,7 +11,6 @@ class MenuItem < ApplicationRecord
 
   validates :name, presence: true
   validates :price, numericality: { greater_than: 0 }
-  validates :display_mode, inclusion: { in: DISPLAY_MODES }
   validates :calories, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :sku, uniqueness: true, allow_nil: true

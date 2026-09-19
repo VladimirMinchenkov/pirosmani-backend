@@ -16,15 +16,8 @@ RSpec.describe MenuItem, type: :model do
   describe 'validations' do
     it { should validate_presence_of(:name) }
     it { should validate_numericality_of(:price).is_greater_than(0) }
-    it { should validate_inclusion_of(:display_mode).in_array(MenuItem::DISPLAY_MODES) }
     it { should validate_numericality_of(:calories).is_greater_than_or_equal_to(0) }
     it { should validate_numericality_of(:position).only_integer.is_greater_than_or_equal_to(0) }
-  end
-
-  describe 'DISPLAY_MODES' do
-    it 'defines simple and variant_picker modes' do
-      expect(MenuItem::DISPLAY_MODES).to match_array(%w[simple variant_picker])
-    end
   end
 
   describe 'factory' do

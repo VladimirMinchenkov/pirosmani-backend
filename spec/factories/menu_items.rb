@@ -5,7 +5,6 @@ FactoryBot.define do
     price { 9.99 }
     image_url { "https://example.com/image.jpg" }
     available { true }
-    display_mode { "simple" }
     weight_label { "250g" }
     calories { 350 }
     allergens { [] }
@@ -18,7 +17,6 @@ FactoryBot.define do
     end
 
     trait :variant_picker do
-      display_mode { "variant_picker" }
     end
 
     trait :with_tags do

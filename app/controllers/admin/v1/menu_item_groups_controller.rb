@@ -87,7 +87,7 @@ module Admin
       def menu_item_params
         params.require(:menu_item).permit(
           :name, :description, :price, :image_url, :available,
-          :weight_label, :calories, :sku, :display_mode,
+          :weight_label, :calories, :sku,
           allergens: []
         )
       end

@@ -53,7 +53,7 @@ module Admin
       def menu_item_params
         params.require(:menu_item).permit(
           :name, :description, :price, :image_url, :available,
-          :category_id, :menu_item_group_id, :display_mode,
+          :category_id, :menu_item_group_id,
           :position_in_category, :position_in_group,
           :weight_label, :calories, :sku, :position,
           allergens: [], tag_ids: [], addon_group_ids: []

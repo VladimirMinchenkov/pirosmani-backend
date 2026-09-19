@@ -43,7 +43,6 @@ RSpec.describe "Admin::V1::MenuItems", type: :request do
                price: 12.99,
                category_id: category.id,
                menu_item_group_id: menu_item_group.id,
-               display_mode: 'simple',
                tag_ids: [tag.id],
                addon_group_ids: [addon_group.id]
              }

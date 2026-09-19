@@ -54,7 +54,6 @@ module Api
             calories: mi.calories,
             allergens: mi.allergens,
             sku: mi.sku,
-            display_mode: mi.display_mode,
             position_in_category: mi.position_in_category,
             tags: mi.tags.map { |t| TagSerializer.new(t).as_json },
             addon_groups: mi.addon_groups.map { |ag| AddonGroupSerializer.new(ag).as_json }
