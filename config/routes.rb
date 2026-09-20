@@ -18,6 +18,7 @@ Rails.application.routes.draw do
           get :menu
         end
       end
+      resources :tags, only: [:index]
       resources :app_settings, only: [:index]
       resources :orders, only: [:index, :create, :show]
       resources :client_addresses, only: [:index, :create, :update, :destroy]

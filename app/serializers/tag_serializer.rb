@@ -8,7 +8,9 @@ class TagSerializer
     {
       id: @tag.id,
       name: @tag.name,
-      slug: @tag.slug
+      slug: @tag.slug,
+      color: @tag.color,
+      emoji: @tag.emoji
     }
   end
 end

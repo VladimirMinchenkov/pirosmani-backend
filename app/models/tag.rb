@@ -5,6 +5,7 @@ class Tag < ApplicationRecord
 
   validates :name, presence: true, uniqueness: true
   validates :slug, presence: true, uniqueness: true
+  validates :color, format: { with: /\A#[0-9a-fA-F]{6}\z/, message: "должен быть в формате #RRGGBB" }, allow_blank: true
 
   before_validation :generate_slug, on: [:create, :update]
 

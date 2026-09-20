@@ -43,7 +43,7 @@ module Admin
       end
 
       def tag_params
-        params.require(:tag).permit(:name, :slug)
+        params.require(:tag).permit(:name, :slug, :color, :emoji)
       end
     end
   end
