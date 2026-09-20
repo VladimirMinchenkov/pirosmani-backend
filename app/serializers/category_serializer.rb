@@ -11,8 +11,20 @@ class CategorySerializer
       id: @category.id,
       name: @category.name,
       icon: @category.icon,
-      image_url: @category.image.attached? ? Rails.application.routes.url_helpers.url_for(@category.image) : @category.image_url,
+      image_url: image_url(@category),
       position: @category.position
     }
+  end
+
+  private
+
+  def image_url(record)
+    if record.image.attached?
+      Rails.application.routes.url_helpers.url_for(record.image)
+    else
+      record.image_url
+    end
+  rescue StandardError
+    record.image_url
   end
 end

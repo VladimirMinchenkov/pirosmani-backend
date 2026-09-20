@@ -10,7 +10,7 @@ class MenuItemSerializer
       name: @menu_item.name,
       description: @menu_item.description,
       price: @menu_item.price.to_f,
-      image_url: @menu_item.image.attached? ? Rails.application.routes.url_helpers.url_for(@menu_item.image) : @menu_item.image_url,
+      image_url: image_url(@menu_item),
       available: @menu_item.available,
       weight_label: @menu_item.weight_label,
       calories: @menu_item.calories,
@@ -22,5 +22,17 @@ class MenuItemSerializer
       menu_item_group: MenuItemGroupSerializer.new(@menu_item.menu_item_group).as_json,
       addon_groups: @menu_item.addon_groups.map { |group| AddonGroupSerializer.new(group).as_json }
     }
+  end
+
+  private
+
+  def image_url(record)
+    if record.image.attached?
+      Rails.application.routes.url_helpers.url_for(record.image)
+    else
+      record.image_url
+    end
+  rescue StandardError
+    record.image_url
   end
 end
