@@ -1,4 +1,6 @@
 class MenuItemGroup < ApplicationRecord
+  has_one_attached :image
+
   belongs_to :category, optional: true
   has_many :menu_items, -> { order(:position_in_group) }, dependent: :restrict_with_error
 

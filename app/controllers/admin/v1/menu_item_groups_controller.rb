@@ -79,7 +79,7 @@ module Admin
 
       def menu_item_group_params
         params.require(:menu_item_group).permit(
-          :name, :slug, :category_id, :position_in_category,
+          :name, :slug, :category_id, :position_in_category, :image,
           :min_total_quantity, :description, :image_url, :available
         )
       end

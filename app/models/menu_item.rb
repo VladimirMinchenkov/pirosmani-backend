@@ -1,4 +1,6 @@
 class MenuItem < ApplicationRecord
+  has_one_attached :image
+
   belongs_to :category, optional: true
   belongs_to :menu_item_group, optional: true
   has_many :order_items

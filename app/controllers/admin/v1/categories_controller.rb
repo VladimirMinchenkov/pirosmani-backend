@@ -94,7 +94,7 @@ module Admin
       end
 
       def category_params
-        params.require(:category).permit(:name, :icon, :image_url, :position)
+        params.require(:category).permit(:name, :icon, :image_url, :image, :position)
       end
     end
   end

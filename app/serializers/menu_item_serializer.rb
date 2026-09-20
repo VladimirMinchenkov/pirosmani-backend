@@ -10,7 +10,7 @@ class MenuItemSerializer
       name: @menu_item.name,
       description: @menu_item.description,
       price: @menu_item.price.to_f,
-      image_url: @menu_item.image_url,
+      image_url: @menu_item.image.attached? ? Rails.application.routes.url_helpers.url_for(@menu_item.image) : @menu_item.image_url,
       available: @menu_item.available,
       weight_label: @menu_item.weight_label,
       calories: @menu_item.calories,

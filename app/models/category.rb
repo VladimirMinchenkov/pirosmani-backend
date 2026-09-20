@@ -1,4 +1,6 @@
 class Category < ApplicationRecord
+  has_one_attached :image
+
   has_many :menu_items, dependent: :nullify
   has_many :menu_item_groups, dependent: :destroy
 

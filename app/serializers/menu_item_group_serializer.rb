@@ -15,7 +15,7 @@ class MenuItemGroupSerializer
       position_in_category: @menu_item_group.position_in_category,
       min_total_quantity: @menu_item_group.min_total_quantity,
       description: @menu_item_group.description,
-      image_url: @menu_item_group.image_url,
+      image_url: @menu_item_group.image.attached? ? Rails.application.routes.url_helpers.url_for(@menu_item_group.image) : @menu_item_group.image_url,
       available: @menu_item_group.available
     }
   end
