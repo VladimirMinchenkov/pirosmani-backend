@@ -3,7 +3,7 @@ class MenuItem < ApplicationRecord
 
   belongs_to :category, optional: true
   belongs_to :menu_item_group, optional: true
-  has_many :order_items
+  has_many :order_items, dependent: :restrict_with_error
   has_many :orders, through: :order_items
   has_many :cart_items
   has_many :menu_item_tags, dependent: :destroy
@@ -15,9 +15,9 @@ class MenuItem < ApplicationRecord
   validates :price, numericality: { greater_than: 0 }
   validates :calories, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
-  validates :sku, uniqueness: true, allow_nil: true
-  validates :position_in_category, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
-  validates :position_in_group, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :sku, uniqueness: true, allow_blank: true
+  validates :position_in_category, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_blank: true
+  validates :position_in_group, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_blank: true
 
   before_validation :nilify_blank_positions
   validate :position_fields_mutex
@@ -30,6 +30,8 @@ class MenuItem < ApplicationRecord
   def nilify_blank_positions
     self.position_in_category = nil if position_in_category.blank?
     self.position_in_group = nil if position_in_group.blank?
+    self.sku = nil if sku.blank?
+    self.image_url = nil if image_url.blank?
   end
 
   def position_fields_mutex

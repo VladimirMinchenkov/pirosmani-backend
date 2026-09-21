@@ -6,4 +6,12 @@ class Category < ApplicationRecord
 
   validates :name, presence: true, uniqueness: true
   validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+
+  before_validation :nilify_blank_image_url
+
+  private
+
+  def nilify_blank_image_url
+    self.image_url = nil if image_url.blank?
+  end
 end

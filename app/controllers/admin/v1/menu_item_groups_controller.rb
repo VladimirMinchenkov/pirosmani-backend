@@ -24,6 +24,9 @@ module Admin
 
       def update
         if @menu_item_group.update(menu_item_group_params)
+          if @menu_item_group.image_url.blank? && params.dig(:menu_item_group, :image).blank?
+            @menu_item_group.image.purge if @menu_item_group.image.attached?
+          end
           render json: MenuItemGroupSerializer.new(@menu_item_group).as_json
         else
           render json: { errors: @menu_item_group.errors.full_messages }, status: :unprocessable_entity

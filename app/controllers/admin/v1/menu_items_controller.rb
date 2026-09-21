@@ -29,6 +29,10 @@ module Admin
       def update
         ActiveRecord::Base.transaction do
           @menu_item.update!(menu_item_params)
+          # Если image_url очищен и новый файл не загружен — удаляем attachment
+          if @menu_item.image_url.blank? && params.dig(:menu_item, :image).blank?
+            @menu_item.image.purge if @menu_item.image.attached?
+          end
           assign_tags(@menu_item)
           assign_addon_groups(@menu_item)
         end

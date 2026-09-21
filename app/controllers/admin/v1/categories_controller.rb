@@ -23,6 +23,9 @@ module Admin
 
       def update
         if @category.update(category_params)
+          if @category.image_url.blank? && params.dig(:category, :image).blank?
+            @category.image.purge if @category.image.attached?
+          end
           render json: CategorySerializer.new(@category).as_json
         else
           render json: { errors: @category.errors.full_messages }, status: :unprocessable_entity

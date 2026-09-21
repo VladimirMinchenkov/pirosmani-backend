@@ -9,6 +9,7 @@ class MenuItemGroup < ApplicationRecord
   validates :position_in_category, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   before_validation :generate_slug, on: [:create, :update]
+  before_validation :nilify_blank_image_url
 
   scope :ordered, -> { order(:position_in_category) }
 
@@ -29,5 +30,9 @@ class MenuItemGroup < ApplicationRecord
     return if name.blank?
 
     self.slug = name.chars.map { |c| RU_EN[c] || c }.join.parameterize if slug.blank?
+  end
+
+  def nilify_blank_image_url
+    self.image_url = nil if image_url.blank?
   end
 end
