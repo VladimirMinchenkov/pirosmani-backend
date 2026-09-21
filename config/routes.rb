@@ -62,6 +62,7 @@ Rails.application.routes.draw do
       end
       resources :menu_items
       resources :orders, only: [:index, :show, :update]
+      resources :clients
       resources :promo_codes
       resources :app_settings, only: [:index, :update]
     end
