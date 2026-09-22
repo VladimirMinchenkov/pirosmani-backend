@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_20_111500) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_21_200502) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -158,6 +158,26 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_20_111500) do
     t.index ["phone"], name: "index_clients_on_phone", unique: true
   end
 
+  create_table "combo_items", force: :cascade do |t|
+    t.bigint "combo_id", null: false
+    t.bigint "menu_item_id", null: false
+    t.integer "quantity", default: 1
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["combo_id"], name: "index_combo_items_on_combo_id"
+    t.index ["menu_item_id"], name: "index_combo_items_on_menu_item_id"
+  end
+
+  create_table "combos", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.decimal "price", precision: 10, scale: 2, null: false
+    t.string "image_url"
+    t.boolean "active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "delivery_zones", force: :cascade do |t|
     t.string "name"
     t.boolean "active"
@@ -251,6 +271,18 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_20_111500) do
     t.index ["order_id"], name: "index_order_items_on_order_id"
   end
 
+  create_table "order_promotions", force: :cascade do |t|
+    t.decimal "min_amount", precision: 10, scale: 2, null: false
+    t.string "discount_type", null: false
+    t.decimal "discount_value", precision: 10, scale: 2, null: false
+    t.datetime "starts_at"
+    t.datetime "ends_at"
+    t.boolean "active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_order_promotions_on_active"
+  end
+
   create_table "orders", force: :cascade do |t|
     t.string "status"
     t.string "address"
@@ -296,6 +328,19 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_20_111500) do
     t.index ["code"], name: "index_promo_codes_on_code", unique: true
   end
 
+  create_table "promotions", force: :cascade do |t|
+    t.bigint "menu_item_id", null: false
+    t.string "discount_type", null: false
+    t.decimal "discount_value", precision: 10, scale: 2, null: false
+    t.datetime "starts_at"
+    t.datetime "ends_at"
+    t.boolean "active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_promotions_on_active"
+    t.index ["menu_item_id"], name: "index_promotions_on_menu_item_id"
+  end
+
   create_table "refresh_tokens", force: :cascade do |t|
     t.bigint "client_id", null: false
     t.string "token"
@@ -328,6 +373,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_20_111500) do
   add_foreign_key "cart_items", "menu_items"
   add_foreign_key "carts", "clients"
   add_foreign_key "client_addresses", "clients"
+  add_foreign_key "combo_items", "combos"
+  add_foreign_key "combo_items", "menu_items"
   add_foreign_key "menu_item_addon_groups", "addon_groups"
   add_foreign_key "menu_item_addon_groups", "menu_items"
   add_foreign_key "menu_item_tags", "menu_items"
@@ -342,5 +389,6 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_20_111500) do
   add_foreign_key "orders", "clients"
   add_foreign_key "orders", "delivery_zones"
   add_foreign_key "orders", "promo_codes"
+  add_foreign_key "promotions", "menu_items"
   add_foreign_key "refresh_tokens", "clients"
 end

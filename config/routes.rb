@@ -19,6 +19,10 @@ Rails.application.routes.draw do
         end
       end
       resources :tags, only: [:index]
+      post 'cart/calculate', to: 'cart#calculate'
+      resources :promotions, only: [:index]
+      resources :combos, only: [:index]
+      get :active_order_promotion, to: 'order_promotions#active'
       resources :app_settings, only: [:index]
       resources :orders, only: [:index, :create, :show]
       resources :client_addresses, only: [:index, :create, :update, :destroy]
@@ -63,6 +67,9 @@ Rails.application.routes.draw do
       resources :menu_items
       resources :orders, only: [:index, :show, :update]
       resources :clients
+      resources :promotions
+      resources :combos
+      resources :order_promotions
       resources :promo_codes
       resources :app_settings, only: [:index, :update]
     end
