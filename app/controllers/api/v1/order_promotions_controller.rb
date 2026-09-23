@@ -1,5 +1,6 @@
 module Api
-  module V1    class OrderPromotionsController < BaseController
+  module V1
+    class OrderPromotionsController < BaseController
       def active
         promo = OrderPromotion.current.first
         if promo

@@ -20,7 +20,9 @@ module Api
         session_id = request.headers["X-Client-Session-Id"] || params[:session_id]
         if session_id.present?
           cart = Cart.find_by(session_id: session_id)
-          cart&.update!(client: client) if cart&.client_id.nil?
+          if cart&.client_id.nil?
+            cart.update!(client: client, session_id: nil)
+          end
         end
 
         session = Auth::IssueClientSession.call(client.reload)

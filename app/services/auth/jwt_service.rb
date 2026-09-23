@@ -2,7 +2,7 @@
 module Auth
   class JwtService
     ALGORITHM = "HS256".freeze
-    ACCESS_TOKEN_TTL = 15.minutes
+    ACCESS_TOKEN_TTL = Rails.env.development? ? 7.days : 15.minutes
 
     class InvalidToken < StandardError; end
 

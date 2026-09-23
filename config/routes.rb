@@ -19,6 +19,8 @@ Rails.application.routes.draw do
         end
       end
       resources :tags, only: [:index]
+      get 'geocoder', to: 'geocoder#show'
+      get 'geocoder/suggest', to: 'geocoder#suggest'
       post 'cart/calculate', to: 'cart#calculate'
       resources :promotions, only: [:index]
       resources :combos, only: [:index]
@@ -26,6 +28,8 @@ Rails.application.routes.draw do
       resources :app_settings, only: [:index]
       resources :orders, only: [:index, :create, :show]
       resources :client_addresses, only: [:index, :create, :update, :destroy]
+      get 'profile', to: 'profile#show'
+      resources :bonus_transactions, only: [:index]
       resources :promo_codes, only: [] do
         collection do
           post :validate
@@ -35,6 +39,11 @@ Rails.application.routes.draw do
       # Расчёт доставки: лучше GET, потому что это «получение цены по координатам», а не «создание оценки»
       get :delivery_estimate, to: 'delivery_estimate#show'
       # Если нужна сложная логика с сохранением запроса — тогда POST, но для цены достаточно GET
+
+      # Зоны доставки для проверки на фронтенде через turf.js
+      resources :delivery_zones, only: [] do
+        get :active, on: :collection
+      end
     end
   end
 

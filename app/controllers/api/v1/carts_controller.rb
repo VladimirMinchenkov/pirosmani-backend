@@ -49,10 +49,11 @@ module Api
         if current_client.present?
           cart = Cart.find_or_create_by!(client: current_client, status: :active)
         else
-          session_id = request.headers['X-Client-Session-Id']
+          session_id = request.headers['X-Client-Session-Id'].presence ||
+                       params[:session_id].presence ||
+                       params[:cart_id].presence
           if session_id.blank?
             cart = Cart.create!(session_id: SecureRandom.hex(8), status: :active)
-            # Возвращаем session_id через заголовок или тело ответа — handled in show
             return cart
           end
           cart = Cart.find_or_create_by!(session_id: session_id, status: :active)

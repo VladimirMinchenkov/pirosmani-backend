@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_21_200502) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_22_200001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -85,6 +85,20 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_21_200502) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_archived_carts_on_client_id"
+  end
+
+  create_table "bonus_transactions", force: :cascade do |t|
+    t.bigint "client_id", null: false
+    t.bigint "order_id"
+    t.string "kind", null: false
+    t.integer "amount", null: false
+    t.string "description", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id", "created_at"], name: "index_bonus_transactions_on_client_id_and_created_at"
+    t.index ["client_id"], name: "index_bonus_transactions_on_client_id"
+    t.index ["kind"], name: "index_bonus_transactions_on_kind"
+    t.index ["order_id"], name: "index_bonus_transactions_on_order_id"
   end
 
   create_table "cart_item_addons", force: :cascade do |t|
@@ -296,6 +310,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_21_200502) do
     t.bigint "client_address_id"
     t.bigint "delivery_zone_id"
     t.bigint "promo_code_id"
+    t.integer "bonus_points_used", default: 0, null: false
     t.index ["client_address_id"], name: "index_orders_on_client_address_id"
     t.index ["client_id"], name: "index_orders_on_client_id"
     t.index ["delivery_zone_id"], name: "index_orders_on_delivery_zone_id"
@@ -367,6 +382,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_21_200502) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "addons", "addon_groups"
   add_foreign_key "archived_carts", "clients"
+  add_foreign_key "bonus_transactions", "clients"
+  add_foreign_key "bonus_transactions", "orders"
   add_foreign_key "cart_item_addons", "addons"
   add_foreign_key "cart_item_addons", "cart_items"
   add_foreign_key "cart_items", "carts"

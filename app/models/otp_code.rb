@@ -1,7 +1,7 @@
 # app/models/otp_code.rb
 class OtpCode < ApplicationRecord
   OTP_LENGTH = 6
-  OTP_TTL = 5.minutes
+  OTP_TTL = Rails.env.development? ? 30.minutes : 5.minutes
 
   scope :active, -> { where(verified_at: nil).where("expires_at > ?", Time.current) }
 

@@ -28,12 +28,26 @@ module Api
 
         order.delivery_price = delivery_price[:value]
         items_total = calculate_items_total(order_items_params)
-        order.total_price = apply_promo(items_total, order) + order.delivery_price
+        base_total = apply_promo(items_total, order) + order.delivery_price
+
+        # Рассчитываем списание бонусов
+        bonus_points_to_use = params.dig(:order, :bonus_points_to_use).to_i
+        bonus_discount = 0
+        if bonus_points_to_use > 0
+          max_spendable = current_client.max_spendable_bonuses(base_total)
+          bonus_points_to_use = [bonus_points_to_use, max_spendable].min
+          bonus_discount = (bonus_points_to_use * 0.01).round(2)
+        end
+
+        order.total_price = [base_total - bonus_discount, 0].max.round(2)
+        order.bonus_points_used = bonus_points_to_use
 
         Order.transaction do
           order.save!
           order.promo_code&.increment_usage!
           create_order_items!(order)
+          # Списываем бонусы сразу при создании заказа
+          current_client.spend_bonuses!(bonus_points_to_use, order: order) if bonus_points_to_use > 0
         end
 
         render json: OrderSerializer.new(order.reload).as_json, status: :created
@@ -73,17 +87,28 @@ module Api
       def resolve_delivery_price(order)
         return { value: 0.0 } if order.order_type_pickup?
 
-        zone = order.delivery_zone || resolve_zone_from_params(order)
-        return { error: "Delivery not available here", status: :unprocessable_entity } unless zone
-
-        order.delivery_zone = zone
-
         if AppSettingsService.use_yandex_delivery?
-          { value: (params.dig(:order, :estimated_cost) || 0.0).to_f }
-        elsif zone.price.present?
-          { value: zone.price.to_f }
+          estimated = params.dig(:order, :estimated_cost)&.to_f
+          if estimated && estimated > 0
+            { value: estimated }
+          else
+            # Fallback: пересчитываем через Yandex API
+            lat = params.dig(:order, :lat)&.to_f || order.client_address&.lat&.to_f
+            lng = params.dig(:order, :lng)&.to_f || order.client_address&.lng&.to_f
+            if lat && lng
+              result = YandexDeliveryService.calculate(lat: lat, lng: lng)
+              return { error: "Delivery not available here", status: :unprocessable_entity } unless result
+              { value: result[:price] }
+            else
+              { error: "Coordinates required for delivery", status: :unprocessable_entity }
+            end
+          end
         else
-          { error: "Zone price is missing for internal delivery", status: :unprocessable_entity }
+          zone = order.delivery_zone || resolve_zone_from_params(order)
+          return { error: "Delivery not available here", status: :unprocessable_entity } unless zone
+
+          order.delivery_zone = zone
+          { value: zone.price.to_f }
         end
       end
 

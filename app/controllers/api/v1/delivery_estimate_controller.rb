@@ -10,26 +10,30 @@ module Api
           return render json: { error: 'lat and lng are required' }, status: :bad_request
         end
 
-        # Ищем первую активную зону, в которую попадает точка
-        # Так как зон немного, перебор в Ruby быстрее и проще сложного SQL
-        zone = DeliveryZone.active.find do |z|
-          z.contains_point?(lat, lng)
-        end
-
-        if zone
-          # Если у тебя фиксированная цена доставки, можно игнорировать цену из зоны
-          # или брать её, если админ решит менять.
-          render json: {
-            available: true,
-            price: 0, #zone.price.to_f, # Или константа 300.0, если цена фиксирована
-            zone_id: zone.id,
-            zone_name: zone.name
-          }
+        if AppSettingsService.use_yandex_delivery?
+          # Yandex Delivery API
+          delivery = YandexDeliveryService.calculate(lat: lat, lng: lng)
+          if delivery
+            render json: {
+              available: true,
+              price: delivery[:price],
+              estimated_minutes: delivery[:estimated_minutes]
+            }
+          else
+            render json: { available: false, message: 'Yandex Delivery unavailable' }
+          end
         else
-          render json: { 
-            available: false, 
-            message: 'Delivery is not available at this address' 
-          }, status: :not_acceptable
+          # Internal: цена по зоне доставки
+          zone = DeliveryZone.active.find { |z| z.contains_point?(lat, lng) }
+          if zone
+            render json: {
+              available: true,
+              price: zone.price.to_f,
+              zone_name: zone.name
+            }
+          else
+            render json: { available: false, message: 'Address outside delivery zone' }
+          end
         end
       end
     end

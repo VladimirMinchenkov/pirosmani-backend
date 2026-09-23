@@ -60,7 +60,9 @@ module Api
         if current_client.present?
           @cart = Cart.find_or_create_by!(client: current_client, status: :active)
         else
-          session_id = request.headers['X-Client-Session-Id']
+          session_id = request.headers['X-Client-Session-Id'].presence ||
+                       params[:session_id].presence ||
+                       params[:cart_id].presence
           if session_id.blank?
             render json: { error: "Session ID required for guest users" }, status: :bad_request
             return

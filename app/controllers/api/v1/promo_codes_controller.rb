@@ -8,9 +8,9 @@ module Api
         return render json: { error: "code is required" }, status: :bad_request if code.blank?
 
         promo = PromoCode.active_now.find_by(code: code.strip.upcase)
-        return render json: { error: "Invalid or expired promo code" }, status: :not_found unless promo
+        return render json: { valid: false, error: "Invalid or expired promo code" } unless promo
 
-        return render json: { error: "Minimum order price not met" }, status: :unprocessable_entity if params[:order_total].to_f < promo.min_order_price
+        return render json: { valid: false, error: "Minimum order price not met" } if params[:order_total].to_f < promo.min_order_price
 
         render json: {
           valid: true,
