@@ -1,6 +1,8 @@
 class Promotion < ApplicationRecord
   belongs_to :menu_item
 
+  validates :menu_item_id, uniqueness: { message: "уже имеет скидку" }
+
   DISCOUNT_TYPES = %w[fixed percent].freeze
 
   validates :discount_type, inclusion: { in: DISCOUNT_TYPES }

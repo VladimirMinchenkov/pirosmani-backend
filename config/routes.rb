@@ -25,6 +25,7 @@ Rails.application.routes.draw do
       resources :promotions, only: [:index]
       resources :combos, only: [:index]
       get :active_order_promotion, to: 'order_promotions#active'
+      get 'menu/personalized', to: 'menu#personalized'
       resources :app_settings, only: [:index]
       resources :orders, only: [:index, :create, :show]
       resources :client_addresses, only: [:index, :create, :update, :destroy]
