@@ -33,8 +33,10 @@ class YandexDeliveryService
     request["Content-Type"] = "application/json"
     request["Accept-Language"] = "ru"
 
-    # Координаты кафе «Пиросмани» (ул. Советская, 64, Брест)
-    # ВАЖНО: coordinates: [lon, lat] — долгота первая, широта вторая
+    # Координаты кафе — из app_settings, fallback на хардкод
+    cafe_lon = AppSetting.find_by(key: "cafe_lng")&.value&.to_f || 23.694566
+    cafe_lat = AppSetting.find_by(key: "cafe_lat")&.value&.to_f || 52.090279
+
     request.body = {
       items: [
         {
@@ -51,8 +53,7 @@ class YandexDeliveryService
       route_points: [
         {
           # Точка А — кафе (lon, lat)
-          # 23.694566, 52.090279 Советская 64
-          coordinates: [ 23.694566, 52.090279 ],
+          coordinates: [ cafe_lon, cafe_lat ],
           type: "source",
           visit_order: 1
         },
