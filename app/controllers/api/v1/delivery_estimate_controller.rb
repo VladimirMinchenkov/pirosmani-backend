@@ -29,6 +29,7 @@ module Api
             render json: {
               available: true,
               price: zone.price.to_f,
+              zone_id: zone.id,
               zone_name: zone.name
             }
           else

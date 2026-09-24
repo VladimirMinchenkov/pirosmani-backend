@@ -3,7 +3,9 @@ require 'rails_helper'
 RSpec.describe Order, type: :model do
   describe "bonus callback" do
     let(:client) { create(:client, bonus_points: 0) }
-    let(:order) { create(:order, client: client, total_price: 45.50, bonus_points_used: 0, status: "pending") }
+    # delivery_price: 0 — бонусы намеренно начисляются только с суммы блюд (см. Order#award_bonus_points),
+    # поэтому фиксируем его явно, чтобы числовые ожидания ниже (floor(45.50)=45 и т.д.) были верны
+    let(:order) { create(:order, client: client, total_price: 45.50, delivery_price: 0, bonus_points_used: 0, status: "pending") }
 
     describe "#award_bonus_points (after_update to done)" do
       it "awards bonus points when status changes to done" do

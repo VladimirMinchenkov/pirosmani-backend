@@ -1,6 +1,10 @@
 require "rails_helper"
 
 RSpec.describe "Api::V1::DeliveryEstimate", type: :request do
+  # Без этого контроллер по умолчанию идёт в ветку Yandex Delivery API
+  # (AppSettingsService.delivery_mode по умолчанию 'yandex'), а не проверяет DeliveryZone
+  before { AppSetting.create!(key: "delivery_mode", value: "internal") }
+
   describe "GET /api/v1/delivery_estimate" do
     let!(:zone) { create(:delivery_zone, price: 15.0) }
 
@@ -18,10 +22,10 @@ RSpec.describe "Api::V1::DeliveryEstimate", type: :request do
     end
 
     context "with coordinates outside any active zone" do
-      it "returns available: false with 406 status" do
+      it "returns available: false (200 OK — фронтенд использует это как признак фолбэк-тарифа, а не HTTP-ошибку)" do
         get "/api/v1/delivery_estimate", params: { lat: 44.60, lng: 38.06 }
 
-        expect(response).to have_http_status(:not_acceptable)
+        expect(response).to have_http_status(:ok)
         body = json_response
         expect(body["available"]).to be false
         expect(body["message"]).to be_present
@@ -34,7 +38,7 @@ RSpec.describe "Api::V1::DeliveryEstimate", type: :request do
       it "returns available: false" do
         get "/api/v1/delivery_estimate", params: { lat: 44.57, lng: 38.06 }
 
-        expect(response).to have_http_status(:not_acceptable)
+        expect(response).to have_http_status(:ok)
         expect(json_response["available"]).to be false
       end
     end

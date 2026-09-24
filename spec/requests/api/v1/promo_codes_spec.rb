@@ -15,12 +15,19 @@ RSpec.describe "Api::V1::PromoCodes", type: :request do
 
     it "rejects below minimum order" do
       post "/api/v1/promo_codes/validate", params: { code: "WELCOME20", order_total: 50 }
-      expect(response).to have_http_status(:unprocessable_entity)
+      # Контроллер отдаёт 200 + valid:false — фронтенд читает data.error, не HTTP-статус
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      expect(json["valid"]).to be false
+      expect(json["error"]).to be_present
     end
 
     it "rejects unknown code" do
       post "/api/v1/promo_codes/validate", params: { code: "NOPE", order_total: 200 }
-      expect(response).to have_http_status(:not_found)
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      expect(json["valid"]).to be false
+      expect(json["error"]).to be_present
     end
   end
 end

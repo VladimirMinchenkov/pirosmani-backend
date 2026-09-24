@@ -7,7 +7,7 @@ module Api
       # Возвращает персонализированные блоки для главного экрана
       def personalized
         orders = current_client.orders
-                                .includes(order_items: :menu_item)
+                                .includes(order_items: { menu_item: :menu_item_group })
                                 .order(created_at: :desc)
 
         result = { order_count: orders.count }
@@ -24,7 +24,8 @@ module Api
             }
           end
 
-          all_available = items.all? { |i| menu_item_available?(i[:menu_item_id]) }
+          # Используем уже загруженные ассоциации (includes выше) — без доп. запросов
+          all_available = last_order.order_items.all? { |oi| menu_item_available?(oi.menu_item) }
 
           result[:repeat_order] = {
             id: last_order.id,
@@ -47,21 +48,21 @@ module Api
             end
           end
 
-          frequent = counts
-            .sort_by { |_, count| -count }
-            .first(4)
-            .map do |menu_item_id, count|
-              mi = MenuItem.find_by(id: menu_item_id)
-              next unless mi&.available
-              {
-                menu_item_id: mi.id,
-                name: mi.name,
-                price: mi.price.to_f,
-                image_url: mi.image_url,
-                order_count: count
-              }
-            end
-            .compact
+          top_ids = counts.sort_by { |_, count| -count }.first(4).map(&:first)
+          # Батч-загрузка вместо N+1 (было MenuItem.find_by внутри map)
+          menu_items_by_id = MenuItem.includes(:menu_item_group).where(id: top_ids).index_by(&:id)
+
+          frequent = top_ids.map do |menu_item_id|
+            mi = menu_items_by_id[menu_item_id]
+            next unless menu_item_available?(mi)
+            {
+              menu_item_id: mi.id,
+              name: mi.name,
+              price: mi.price.to_f,
+              image_url: mi.image_url,
+              order_count: counts[menu_item_id]
+            }
+          end.compact
 
           result[:frequent_items] = frequent
         else
@@ -78,8 +79,7 @@ module Api
         render json: { error: "Authorization required" }, status: :unauthorized
       end
 
-      def menu_item_available?(id)
-        mi = MenuItem.find_by(id: id)
+      def menu_item_available?(mi)
         return false unless mi&.available
         return false if mi.menu_item_group && !mi.menu_item_group.available
         true
