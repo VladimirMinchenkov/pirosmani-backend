@@ -178,4 +178,60 @@ RSpec.describe "Api::V1::Orders (bonus)", type: :request do
       expect(json["bonus_points_used"]).to eq(50)
     end
   end
+
+  describe "bonus earning when order completes" do
+    let!(:order) do
+      Order.create!(
+        client: client,
+        order_type: "delivery",
+        client_address: address,
+        delivery_zone: zone,
+        status: "pending",
+        total_price: 150.0,
+        delivery_price: 50.0,
+        bonus_points_used: 0
+      )
+    end
+
+    before do
+      OrderItem.create!(order: order, menu_item: menu_item, quantity: 2, price: 50.0)
+    end
+
+    it "earns bonuses when status changes to done" do
+      expect {
+        order.update!(status: "done")
+      }.to change { client.reload.bonus_points }.by(100) # 150 - 50 delivery = 100 floor
+    end
+
+    it "creates earn transaction when order completes" do
+      expect {
+        order.update!(status: "done")
+      }.to change { client.bonus_transactions.earnings.count }.by(1)
+    end
+
+    it "does not earn bonuses twice" do
+      order.update!(status: "done")
+      expect {
+        order.update!(status: "done")
+      }.not_to change { client.reload.bonus_points }
+    end
+
+    it "excludes delivery_price from bonus calculation" do
+      order.update!(status: "done")
+      expect(client.reload.bonus_points).to eq(600) # 500 initial + 100 earned
+    end
+
+    it "does not earn bonuses for cancelled orders" do
+      expect {
+        order.update!(status: "cancelled")
+      }.not_to change { client.reload.bonus_points }
+    end
+
+    it "deducts bonus_points_used from earning base" do
+      order.update!(bonus_points_used: 200, total_price: 150.0)
+      # paid = 150 - 50 delivery - 2.00 bonus = 98, floor = 98
+      order.update!(status: "done")
+      expect(client.reload.bonus_points).to eq(598) # 500 + 98
+    end
+  end
 end
