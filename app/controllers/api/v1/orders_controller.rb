@@ -47,17 +47,34 @@ module Api
       end
 
       def create
-        unless WorkingHoursService.accepting_orders?
+        order = build_order
+
+        # Проверка "кафе открыто прямо сейчас" нужна только для ASAP-заказов —
+        # предзаказ на будущее (scheduled_at) не должен блокироваться тем, что
+        # сейчас, например, ночь; для него своя проверка через реальные часы
+        # работы на нужный день (см. validate_scheduled_at ниже)
+        if order.scheduled_at.blank? && !WorkingHoursService.accepting_orders?
           return render json: { error: "Заказы не принимаются. #{WorkingHoursService.status_text}" }, status: :unprocessable_entity
         end
-
-        order = build_order
 
         delivery_price = resolve_delivery_price(order)
         return render json: { error: delivery_price[:error] }, status: delivery_price[:status] if delivery_price[:error]
 
-        scheduled_error = validate_scheduled_at(order, travel_minutes: delivery_price[:estimated_minutes])
+        # "Живой" замер от Yandex check-price отражает трафик ПРЯМО СЕЙЧАС — это
+        # релевантно только для ASAP (курьер выезжает почти сразу). Для ЛЮБОГО
+        # предзаказа (даже "сегодня вечером") трафик на фактический момент
+        # доставки нам неизвестен — используем усреднённую настройку, а не
+        # мгновенный замер текущих условий на дороге.
+        travel_minutes = effective_travel_minutes(order, delivery_price[:estimated_minutes])
+
+        scheduled_error = validate_scheduled_at(order, travel_minutes: travel_minutes)
         return render json: { error: scheduled_error }, status: :unprocessable_entity if scheduled_error
+
+        # Плановое время старта готовки для предзаказов (используется в админке
+        # для бейджа-напоминания кухне) — раньше этот метод существовал, но
+        # никогда не вызывался, из-за чего cooking_start_planned_at всегда
+        # оставался nil
+        assign_cooking_start_planned_at(order, travel_minutes: travel_minutes)
 
         order.delivery_price = delivery_price[:value]
         items_total = calculate_items_total(order_items_params) + calculate_combo_items_total(combo_items_params)
@@ -129,12 +146,33 @@ module Api
           return { error: "Delivery not available here", status: :unprocessable_entity }
         end
 
+        # Для ПРЕДЗАКАЗА цену фиксируем по стабильному тарифу зоны (задаётся
+        # админом), а НЕ по "живой" котировке Yandex за текущий момент.
+        # Важно: используемый тариф — "Экспресс"/курьер (b2b/cargo/integration
+        # с express-профилем), а НЕ грузовой Cargo с дистанционным тарифом —
+        # цена в нём динамическая, зависит от спроса/времени суток так же, как
+        # у такси (тот же принцип, что и travel_minutes). Курьер физически
+        # поедет не сейчас, а в другой день/час, когда фактическая стоимость
+        # логистики у Yandex может отличаться от сиюминутной в разы. Бизнес
+        # коммитится клиенту на цену уже при оформлении заказа, поэтому для
+        # предзаказа используется предсказуемый тариф, а не рыночный курс
+        # "прямо сейчас" — риск разницы фактической стоимости логистики несёт
+        # кафе, а не клиент.
+        if order.scheduled_at.present?
+          zone = order.delivery_zone || resolve_zone_from_params(order)
+          return { error: "Delivery not available here", status: :unprocessable_entity } unless zone
+
+          order.delivery_zone = zone
+          return { value: zone.price.to_f, estimated_minutes: nil }
+        end
+
         if AppSettingsService.use_yandex_delivery?
           estimated_cost = params.dig(:order, :estimated_cost)&.to_f
           # estimated_minutes — реальное время в дороге от Yandex check-price для
           # этого конкретного адреса (фронт получает его при выборе адреса на
           # checkout). Используем для точного расчёта DeliveryTimingService,
-          # вместо усреднённой настройки cafe_avg_travel_minutes.
+          # вместо усреднённой настройки cafe_avg_travel_minutes. Актуально
+          # только для ASAP — курьер выезжает почти сразу.
           estimated_minutes = params.dig(:order, :estimated_minutes)&.to_f
           if estimated_cost && estimated_cost > 0
             { value: estimated_cost, estimated_minutes: estimated_minutes }
@@ -152,37 +190,61 @@ module Api
         end
       end
 
-      # Минимальное время предзаказа с учётом реального времени в дороге
-      # (если известно от Yandex) — см. DeliveryTimingService и
+      # "Живой" замер времени в дороге от Yandex check-price отражает трафик
+      # ПРЯМО СЕЙЧАС (в момент, когда клиент оформляет заказ на checkout) —
+      # это релевантно только для ASAP-заказа, где курьер выезжает почти
+      # немедленно. Для ЛЮБОГО предзаказа (даже "сегодня вечером", не только
+      # "завтра") реальный трафик на фактический момент доставки нам неизвестен,
+      # поэтому используем усреднённую настройку вместо мгновенного замера —
+      # иначе, например, дневной трафик "сейчас" мог бы неверно обосновать
+      # доступность/недоступность слота на завтрашний вечер.
+      def effective_travel_minutes(order, live_estimate)
+        if order.scheduled_at.blank?
+          live_estimate.presence || AppSettingsService.avg_travel_minutes
+        else
+          AppSettingsService.avg_travel_minutes
+        end
+      end
+
+      # Валидация предзаказа через РЕАЛЬНЫЕ часы работы кафе на конкретную
+      # дату (а не наивный "Time.current + лид-тайм") — учитывает и открытие
+      # кафе, и стоп-время приёма заказов, и то, что курьер должен успеть
+      # доехать до закрытия. См. DeliveryTimingService#day_bounds и
       # plans/scheduled-delivery-courier-timing.md
-      def validate_scheduled_at(order, travel_minutes: nil)
+      def validate_scheduled_at(order, travel_minutes:)
         return nil if order.scheduled_at.blank?
 
-        min_lead_minutes =
-          if order.order_type_delivery?
-            DeliveryTimingService.min_lead_minutes(
-              travel_minutes: travel_minutes.presence || AppSettingsService.avg_travel_minutes
-            )
-          else
-            AppSettingsService.avg_cooking_minutes + AppSettingsService.delivery_buffer_minutes
-          end
+        bounds = DeliveryTimingService.day_bounds(
+          date: order.scheduled_at.to_date,
+          order_type: order.order_type,
+          travel_minutes: travel_minutes
+        )
 
-        earliest = Time.current + min_lead_minutes.minutes
-        return nil if order.scheduled_at >= earliest
+        unless bounds
+          return "В выбранный день кафе не работает или не успеет выполнить заказ. Пожалуйста, выберите другую дату"
+        end
 
-        "Выбранное время слишком близко. Минимум — через #{min_lead_minutes.ceil} мин (не раньше #{earliest.strftime('%H:%M')})"
+        if order.scheduled_at < bounds[:earliest]
+          return "Выбранное время слишком близко. Минимум — #{bounds[:earliest].strftime('%d.%m %H:%M')}"
+        end
+
+        if order.scheduled_at > bounds[:latest]
+          return "К этому времени мы не успеем приготовить и доставить/выдать заказ до закрытия. Пожалуйста, выберите время не позднее #{bounds[:latest].strftime('%H:%M')}"
+        end
+
+        nil
       end
 
       # Для предзаказов считаем, когда кухне нужно начать готовить, чтобы
       # курьер синхронно приехал к моменту готовности блюда — см.
       # DeliveryTimingService и plans/scheduled-delivery-courier-timing.md.
       # Для ASAP-заказов (без scheduled_at) не нужно — кухня начинает сразу.
-      def assign_cooking_start_planned_at(order, travel_minutes: nil)
+      def assign_cooking_start_planned_at(order, travel_minutes:)
         return if order.scheduled_at.blank?
 
         order.cooking_start_planned_at = DeliveryTimingService.cooking_start_planned_at(
           target_delivery_at: order.scheduled_at,
-          travel_minutes: order.order_type_delivery? ? (travel_minutes.presence || AppSettingsService.avg_travel_minutes) : 0
+          travel_minutes: order.order_type_delivery? ? travel_minutes : 0
         )
       end
 

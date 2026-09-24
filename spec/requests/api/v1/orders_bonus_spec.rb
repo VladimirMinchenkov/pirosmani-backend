@@ -2,6 +2,10 @@ require 'rails_helper'
 
 RSpec.describe "Api::V1::Orders (bonus)", type: :request do
   before { AppSetting.create!(key: "delivery_mode", value: "internal") }
+  # ASAP-заказы валидны только когда кафе открыто (WorkingHoursService) —
+  # фиксируем время на понедельник, полдень (2026-01-05, DEFAULT_HOURS 11–22),
+  # чтобы тест не флакал в зависимости от реального времени запуска
+  before { travel_to(Time.zone.local(2026, 1, 5, 12, 0, 0)) }
 
   let(:client) { create(:client, bonus_points: 500) }
   let(:headers) { { "Authorization" => "Bearer #{Auth::JwtService.encode(client_id: client.id)}" } }

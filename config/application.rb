@@ -16,7 +16,13 @@ module PirosmaniBackend
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    # КРИТИЧНО: часы работы кафе (cafe_working_hours) и все настройки тайминга
+    # (WorkingHoursService, DeliveryTimingService) заданы как локальное время
+    # Минска ("11:00"–"22:00"). Без этой настройки Rails по умолчанию считает
+    # Time.current в UTC (отстаёт от Минска на 3 часа), из-за чего кафе
+    # "продолжает работать" ещё 3 часа после реального закрытия и ASAP-заказы
+    # принимаются, когда кафе физически уже закрыто.
+    config.time_zone = "Europe/Minsk"
     # config.eager_load_paths << Rails.root.join("extras")
 
     # Only loads a smaller set of middleware suitable for API only apps.

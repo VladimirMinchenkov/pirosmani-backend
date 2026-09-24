@@ -6,6 +6,11 @@ class WorkingHoursService
     "thu" => "Четверг", "fri" => "Пятница", "sat" => "Суббота", "sun" => "Воскресенье"
   }.freeze
 
+  # Фолбэк, используется ТОЛЬКО если в AppSetting нет записи cafe_working_hours
+  # вообще (например, на свежем окружении без сидинга) — реальные часы кафе
+  # (открытие в 12:00) хранятся в AppSetting и настраиваются через админку;
+  # значение здесь не привязано к конкретному бизнесу и намеренно оставлено
+  # отдельно, чтобы не переписывать все тесты, завязанные на этот дефолт
   DEFAULT_HOURS = {
     "mon" => { "open" => "11:00", "close" => "22:00" },
     "tue" => { "open" => "11:00", "close" => "22:00" },
@@ -29,11 +34,32 @@ class WorkingHoursService
     end
 
     def today_key
-      DAY_KEYS[Time.current.wday == 0 ? 6 : Time.current.wday - 1] # wday: 0=Sun -> sun, 1=Mon -> mon
+      day_key_for(Time.current)
+    end
+
+    def day_key_for(time_or_date)
+      wday = time_or_date.wday
+      DAY_KEYS[wday.zero? ? 6 : wday - 1] # wday: 0=Sun -> sun, 1=Mon -> mon
     end
 
     def today_hours
       working_hours[today_key] || DEFAULT_HOURS["mon"]
+    end
+
+    # Часы работы на произвольную дату (для расчёта слотов предзаказа на
+    # будущие дни) — nil, если в этот день кафе не работает вообще
+    def hours_for(date)
+      key = day_key_for(date)
+      hours = working_hours[key]
+      return nil if hours.blank? || hours["open"].blank? || hours["close"].blank?
+
+      hours
+    end
+
+    # Собирает конкретный Time на заданную дату из строки "HH:MM"
+    def time_on(date, hhmm)
+      h, m = hhmm.split(":").map(&:to_i)
+      Time.zone.local(date.year, date.month, date.day, h, m, 0)
     end
 
     def open_now?
@@ -81,8 +107,7 @@ class WorkingHoursService
     private
 
     def parse_time(str)
-      parts = str.split(":").map(&:to_i)
-      Time.current.change(hour: parts[0], min: parts[1], sec: 0)
+      time_on(Time.current.to_date, str)
     end
 
     def time_to_minutes(t)

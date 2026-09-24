@@ -33,6 +33,13 @@ rescue ActiveRecord::PendingMigrationError => e
   abort e.to_s.strip
 end
 RSpec.configure do |config|
+  # travel_to / travel_back — для детерминированных тестов, зависящих от
+  # текущего времени (часы работы кафе, тайминг предзаказов)
+  config.include ActiveSupport::Testing::TimeHelpers
+  # Автоматически "отматываем" время после каждого теста — иначе travel_to без
+  # блока (bare-вызов в before-хуке) продолжит действовать на следующие тесты
+  config.after { travel_back }
+
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
   config.fixture_path = Rails.root.join('spec/fixtures')
 

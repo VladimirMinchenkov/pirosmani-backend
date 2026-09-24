@@ -78,4 +78,94 @@ RSpec.describe DeliveryTimingService do
       expect(described_class.min_lead_minutes).to eq(55)
     end
   end
+
+  describe "lead_minutes_for" do
+    before { set_settings(cooking: 30, courier: 15, travel: 20, buffer: 5) }
+
+    it "для delivery == min_lead_minutes" do
+      expect(described_class.lead_minutes_for(order_type: "delivery")).to eq(55)
+    end
+
+    it "для pickup == cooking + buffer (без курьера/дороги)" do
+      expect(described_class.lead_minutes_for(order_type: "pickup")).to eq(35) # 30+5
+    end
+  end
+
+  # ─── Реальные часы работы: latest_scheduled_at / day_bounds / earliest_available_at ───
+  # DEFAULT_HOURS (WorkingHoursService, если cafe_working_hours не настроен):
+  #   mon-thu,sun: 11:00–22:00; fri,sat: 11:00–23:00
+  # 2026-01-05 — понедельник (проверено через Date#strftime), 2026-01-02 — пятница
+  describe "latest_scheduled_at — курьер должен успеть до закрытия" do
+    before { set_settings(cooking: 30, courier: 15, travel: 20, buffer: 5) }
+    let(:monday) { Date.new(2026, 1, 5) }
+
+    it "delivery: close(22:00) - travel(20) - buffer(5) = 21:35 (курьер — бутылочное горлышко при стандартном order_stop_minutes=30)" do
+      expect(described_class.latest_scheduled_at(date: monday, order_type: "delivery"))
+        .to eq(Time.zone.local(2026, 1, 5, 21, 35))
+    end
+
+    it "pickup: close(22:00) - buffer(5) = 21:55" do
+      expect(described_class.latest_scheduled_at(date: monday, order_type: "pickup"))
+        .to eq(Time.zone.local(2026, 1, 5, 21, 55))
+    end
+
+    it "nil, если кафе в этот день не работает" do
+      AppSetting.create!(key: "cafe_working_hours", value: { "mon" => { "open" => "11:00", "close" => "22:00" } }.to_json)
+      tuesday = Date.new(2026, 1, 6)
+      expect(described_class.latest_scheduled_at(date: tuesday, order_type: "delivery")).to be_nil
+    end
+
+    it "когда cafe_order_stop_minutes большой — становится ограничивающим фактором вместо доезда курьера" do
+      AppSetting.create!(key: "cafe_order_stop_minutes", value: "120") # кухня не берёт заказы после 20:00
+      # stop_at=20:00; kitchen_stop_limit=20:00+30(P)+20(T)+5(B)=20:55; courier_limit=21:35 → latest=min=20:55
+      expect(described_class.latest_scheduled_at(date: monday, order_type: "delivery"))
+        .to eq(Time.zone.local(2026, 1, 5, 20, 55))
+    end
+  end
+
+  describe "day_bounds" do
+    before { set_settings(cooking: 30, courier: 15, travel: 20, buffer: 5) }
+    let(:monday) { Date.new(2026, 1, 5) }
+
+    it "earliest = max(open, from) + lead; latest = latest_scheduled_at, когда день укладывается" do
+      from = Time.zone.local(2026, 1, 5, 8, 0) # до открытия
+      bounds = described_class.day_bounds(date: monday, order_type: "delivery", from: from)
+      expect(bounds[:earliest]).to eq(Time.zone.local(2026, 1, 5, 11, 55)) # open(11:00)+lead(55)
+      expect(bounds[:latest]).to eq(Time.zone.local(2026, 1, 5, 21, 35))
+    end
+
+    it "nil, если уже слишком поздно, чтобы уложиться в это же рабочее окно (earliest > latest)" do
+      from = Time.zone.local(2026, 1, 5, 21, 0) # 21:00 — кухня почти закрывается
+      # kitchen_start_floor=max(11:00,21:00)=21:00; earliest=21:00+55=21:55 > latest(21:35)
+      expect(described_class.day_bounds(date: monday, order_type: "delivery", from: from)).to be_nil
+    end
+
+    it "nil, если кафе не работает в этот день" do
+      AppSetting.create!(key: "cafe_working_hours", value: { "mon" => { "open" => "11:00", "close" => "22:00" } }.to_json)
+      tuesday = Date.new(2026, 1, 6)
+      expect(described_class.day_bounds(date: tuesday, order_type: "delivery")).to be_nil
+    end
+  end
+
+  describe "earliest_available_at — ищет вперёд по дням, если сегодня уже не укладывается" do
+    before { set_settings(cooking: 30, courier: 15, travel: 20, buffer: 5) }
+
+    it "возвращает сегодняшний слот, если укладывается" do
+      from = Time.zone.local(2026, 1, 5, 8, 0)
+      expect(described_class.earliest_available_at(order_type: "delivery", from: from))
+        .to eq(Time.zone.local(2026, 1, 5, 11, 55))
+    end
+
+    it "переходит на следующий день, если сегодня уже поздно (21:00, understanding kitchen close ~21:35)" do
+      from = Time.zone.local(2026, 1, 5, 21, 0) # понедельник, слишком поздно
+      # вторник (default hours) открывается в 11:00 → earliest=11:55 следующего дня
+      expect(described_class.earliest_available_at(order_type: "delivery", from: from))
+        .to eq(Time.zone.local(2026, 1, 6, 11, 55))
+    end
+
+    it "nil, если кафе закрыто на все MAX_DAYS_LOOKAHEAD дней вперёд" do
+      AppSetting.create!(key: "cafe_working_hours", value: "{}") # закрыто всегда
+      expect(described_class.earliest_available_at(order_type: "delivery")).to be_nil
+    end
+  end
 end
