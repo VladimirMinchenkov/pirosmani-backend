@@ -33,9 +33,10 @@ class Order < ApplicationRecord
     # Начисляем бонусы только если ещё не начислены (защита от двойного начисления)
     return if bonus_transactions.where(kind: 'earn').exists?
 
-    # Сумма за которую начисляем бонусы = total_price - бонусная скидка
+    # Сумма за которую начисляем бонусы = total_price - доставка - бонусная скидка
+    # Бонусы начисляются только с суммы блюд, без учёта доставки
     # 1 BYN = 1 бонус, округляем вниз
-    paid_by_money = total_price.to_f - (bonus_points_used * 0.01)
+    paid_by_money = total_price.to_f - delivery_price.to_f - (bonus_points_used * 0.01)
     points_to_earn = paid_by_money.floor
 
     client.earn_bonuses!(points_to_earn, order: self) if points_to_earn > 0
