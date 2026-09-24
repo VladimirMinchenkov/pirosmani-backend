@@ -20,6 +20,32 @@ module Api
         render json: { error: "Order not found" }, status: :not_found
       end
 
+      # GET /api/v1/orders/:id/courier_position
+      # Proxy к Yandex Delivery (или мок-симуляции) для трекинга у клиента.
+      # Без телефона курьера — только имя/авто/статус/координаты/ETA.
+      def courier_position
+        order = current_client.orders.find(params[:id])
+        snapshot = YandexDeliveryTrackingService.snapshot(order)
+        if snapshot
+          render json: snapshot.except(:claim_id)
+        else
+          render json: { error: "Courier claim not created yet" }, status: :not_found
+        end
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "Order not found" }, status: :not_found
+      end
+
+      # POST /api/v1/orders/:id/call_courier
+      # Возвращает подменный (masked) номер, чтобы клиент мог позвонить курьеру
+      def call_courier
+        order = current_client.orders.find(params[:id])
+        render json: YandexDeliveryTrackingService.call_courier(order)
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "Order not found" }, status: :not_found
+      rescue YandexDeliveryClaimService::Error => e
+        render json: { error: e.message }, status: :service_unavailable
+      end
+
       def create
         unless WorkingHoursService.accepting_orders?
           return render json: { error: "Заказы не принимаются. #{WorkingHoursService.status_text}" }, status: :unprocessable_entity

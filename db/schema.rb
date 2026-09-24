@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_25_000000) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_26_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -314,10 +314,17 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_25_000000) do
     t.bigint "delivery_zone_id"
     t.bigint "promo_code_id"
     t.integer "bonus_points_used", default: 0, null: false
+    t.string "yandex_claim_id"
+    t.string "yandex_claim_status"
+    t.string "courier_name"
+    t.string "courier_vehicle"
+    t.string "courier_phone_masked"
+    t.datetime "claim_requested_at"
     t.index ["client_address_id"], name: "index_orders_on_client_address_id"
     t.index ["client_id"], name: "index_orders_on_client_id"
     t.index ["delivery_zone_id"], name: "index_orders_on_delivery_zone_id"
     t.index ["promo_code_id"], name: "index_orders_on_promo_code_id"
+    t.index ["yandex_claim_id"], name: "index_orders_on_yandex_claim_id"
   end
 
   create_table "otp_codes", force: :cascade do |t|

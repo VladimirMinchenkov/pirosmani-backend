@@ -27,7 +27,12 @@ Rails.application.routes.draw do
       get :active_order_promotion, to: 'order_promotions#active'
       get 'menu/personalized', to: 'menu#personalized'
       resources :app_settings, only: [:index]
-      resources :orders, only: [:index, :create, :show]
+      resources :orders, only: [:index, :create, :show] do
+        member do
+          get :courier_position
+          post :call_courier
+        end
+      end
       resources :client_addresses, only: [:index, :create, :update, :destroy]
       get 'profile', to: 'profile#show'
       resources :bonus_transactions, only: [:index]
@@ -75,7 +80,13 @@ Rails.application.routes.draw do
         resources :addons, only: [:create, :update, :destroy]
       end
       resources :menu_items
-      resources :orders, only: [:index, :show, :update]
+      resources :orders, only: [:index, :show, :update] do
+        member do
+          get :courier
+          post :create_courier_claim
+          post :call_courier
+        end
+      end
       resources :clients
       resources :promotions
       resources :combos
