@@ -73,6 +73,11 @@ module Api
 
       private
 
+      def require_client!
+        return if current_client.present?
+        render json: { error: "Authorization required" }, status: :unauthorized
+      end
+
       def menu_item_available?(id)
         mi = MenuItem.find_by(id: id)
         return false unless mi&.available

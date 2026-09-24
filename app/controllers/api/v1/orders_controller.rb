@@ -6,14 +6,14 @@ module Api
 
       def index
         orders = current_client.orders
-                                .includes(order_items: [:menu_item, :order_item_addons])
+                                .includes(order_items: [:menu_item, :combo, :order_item_addons])
                                 .order(created_at: :desc)
         render json: orders.map { |order| OrderSerializer.new(order).as_json }
       end
 
       def show
         order = current_client.orders
-                               .includes(order_items: [:menu_item, :order_item_addons])
+                               .includes(order_items: [:menu_item, :combo, :order_item_addons])
                                .find(params[:id])
         render json: OrderSerializer.new(order).as_json
       rescue ActiveRecord::RecordNotFound
@@ -21,13 +21,17 @@ module Api
       end
 
       def create
+        unless WorkingHoursService.accepting_orders?
+          return render json: { error: "Заказы не принимаются. #{WorkingHoursService.status_text}" }, status: :unprocessable_entity
+        end
+
         order = build_order
 
         delivery_price = resolve_delivery_price(order)
         return render json: { error: delivery_price[:error] }, status: delivery_price[:status] if delivery_price[:error]
 
         order.delivery_price = delivery_price[:value]
-        items_total = calculate_items_total(order_items_params)
+        items_total = calculate_items_total(order_items_params) + calculate_combo_items_total(combo_items_params)
         base_total = apply_promo(items_total, order) + order.delivery_price
 
         # Рассчитываем списание бонусов
@@ -46,6 +50,7 @@ module Api
           order.save!
           order.promo_code&.increment_usage!
           create_order_items!(order)
+          create_combo_items!(order)
           # Списываем бонусы сразу при создании заказа
           current_client.spend_bonuses!(bonus_points_to_use, order: order) if bonus_points_to_use > 0
         end
@@ -141,6 +146,17 @@ module Api
         end
       end
 
+      def create_combo_items!(order)
+        combo_items_params.each do |item_params|
+          combo = Combo.find(item_params[:combo_id])
+          order.order_items.create!(
+            combo: combo,
+            quantity: item_params[:quantity].to_i,
+            price: combo.price
+          )
+        end
+      end
+
       def calculate_items_total(items)
         items.sum do |item|
           menu_item = MenuItem.find(item[:menu_item_id])
@@ -150,6 +166,13 @@ module Api
           addons_total = Addon.where(id: addon_ids).sum(:price) * item[:quantity].to_i
 
           item_total + addons_total
+        end
+      end
+
+      def calculate_combo_items_total(items)
+        items.sum do |item|
+          combo = Combo.find(item[:combo_id])
+          combo.price * item[:quantity].to_i
         end
       end
 
@@ -164,8 +187,14 @@ module Api
       end
 
       def order_items_params
-        params.require(:order).require(:order_items).map do |item|
+        Array(params.dig(:order, :order_items)).map do |item|
           item.permit(:menu_item_id, :quantity, addon_ids: [])
+        end
+      end
+
+      def combo_items_params
+        Array(params.dig(:order, :combo_items)).map do |item|
+          item.permit(:combo_id, :quantity)
         end
       end
     end

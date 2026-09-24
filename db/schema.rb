@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_24_000000) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_25_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -276,13 +276,16 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_24_000000) do
 
   create_table "order_items", force: :cascade do |t|
     t.bigint "order_id", null: false
-    t.bigint "menu_item_id", null: false
+    t.bigint "menu_item_id"
     t.integer "quantity"
     t.decimal "price"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "combo_id"
+    t.index ["combo_id"], name: "index_order_items_on_combo_id"
     t.index ["menu_item_id"], name: "index_order_items_on_menu_item_id"
     t.index ["order_id"], name: "index_order_items_on_order_id"
+    t.check_constraint "menu_item_id IS NOT NULL AND combo_id IS NULL OR menu_item_id IS NULL AND combo_id IS NOT NULL", name: "order_items_menu_item_xor_combo"
   end
 
   create_table "order_promotions", force: :cascade do |t|
@@ -401,6 +404,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_24_000000) do
   add_foreign_key "menu_items", "menu_item_groups"
   add_foreign_key "order_item_addons", "addons"
   add_foreign_key "order_item_addons", "order_items"
+  add_foreign_key "order_items", "combos"
   add_foreign_key "order_items", "menu_items"
   add_foreign_key "order_items", "orders"
   add_foreign_key "orders", "client_addresses"

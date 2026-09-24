@@ -8,7 +8,8 @@ class OrderItemSerializer
     {
       id: @order_item.id,
       menu_item_id: @order_item.menu_item_id,
-      name: @order_item.menu_item.name,
+      combo_id: @order_item.combo_id,
+      name: @order_item.display_name,
       quantity: @order_item.quantity,
       price: @order_item.price.to_f,
       addons: @order_item.order_item_addons.map do |addon|

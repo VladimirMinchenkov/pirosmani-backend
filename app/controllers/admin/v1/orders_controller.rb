@@ -3,7 +3,7 @@ module Admin
     class OrdersController < Admin::BaseController
       INCLUDES = [
         :client, :delivery_zone, :client_address, :promo_code,
-        { order_items: [:menu_item, :order_item_addons] }
+        { order_items: [:menu_item, :combo, :order_item_addons] }
       ].freeze
 
       before_action :set_order, only: [:show, :update]
