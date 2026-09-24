@@ -80,7 +80,7 @@ Rails.application.routes.draw do
       resources :combos
       resources :order_promotions
       resources :promo_codes
-      resources :app_settings, only: [:index, :update]
+      resources :app_settings, only: [:index, :create, :update]
     end
   end
   # Webhooks для внешних сервисов
