@@ -36,6 +36,10 @@ Rails.application.configure do
   # Store uploaded files on the local file system in a temporary directory.
   config.active_storage.service = :test
 
+  # В тестах используем стандартный :test adapter (не GoodJob) — это даёт
+  # простые матчеры have_enqueued_job/perform_enqueued_jobs без обращения к БД
+  config.active_job.queue_adapter = :test
+
   config.action_mailer.perform_caching = false
 
   # Tell Action Mailer not to deliver emails to the real world.

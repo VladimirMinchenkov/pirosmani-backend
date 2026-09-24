@@ -56,6 +56,9 @@ module Api
         delivery_price = resolve_delivery_price(order)
         return render json: { error: delivery_price[:error] }, status: delivery_price[:status] if delivery_price[:error]
 
+        scheduled_error = validate_scheduled_at(order, travel_minutes: delivery_price[:estimated_minutes])
+        return render json: { error: scheduled_error }, status: :unprocessable_entity if scheduled_error
+
         order.delivery_price = delivery_price[:value]
         items_total = calculate_items_total(order_items_params) + calculate_combo_items_total(combo_items_params)
         base_total = apply_promo(items_total, order) + order.delivery_price
@@ -116,7 +119,7 @@ module Api
       end
 
       def resolve_delivery_price(order)
-        return { value: 0.0 } if order.order_type_pickup?
+        return { value: 0.0, estimated_minutes: nil } if order.order_type_pickup?
 
         lat = params.dig(:order, :lat)&.to_f || order.client_address&.lat&.to_f
         lng = params.dig(:order, :lng)&.to_f || order.client_address&.lng&.to_f
@@ -127,21 +130,60 @@ module Api
         end
 
         if AppSettingsService.use_yandex_delivery?
-          estimated = params.dig(:order, :estimated_cost)&.to_f
-          if estimated && estimated > 0
-            { value: estimated }
+          estimated_cost = params.dig(:order, :estimated_cost)&.to_f
+          # estimated_minutes — реальное время в дороге от Yandex check-price для
+          # этого конкретного адреса (фронт получает его при выборе адреса на
+          # checkout). Используем для точного расчёта DeliveryTimingService,
+          # вместо усреднённой настройки cafe_avg_travel_minutes.
+          estimated_minutes = params.dig(:order, :estimated_minutes)&.to_f
+          if estimated_cost && estimated_cost > 0
+            { value: estimated_cost, estimated_minutes: estimated_minutes }
           else
             result = YandexDeliveryService.calculate(lat: lat, lng: lng)
             return { error: "Delivery not available here", status: :unprocessable_entity } unless result
-            { value: result[:price] }
+            { value: result[:price], estimated_minutes: result[:estimated_minutes] }
           end
         else
           zone = order.delivery_zone || resolve_zone_from_params(order)
           return { error: "Delivery not available here", status: :unprocessable_entity } unless zone
 
           order.delivery_zone = zone
-          { value: zone.price.to_f }
+          { value: zone.price.to_f, estimated_minutes: nil }
         end
+      end
+
+      # Минимальное время предзаказа с учётом реального времени в дороге
+      # (если известно от Yandex) — см. DeliveryTimingService и
+      # plans/scheduled-delivery-courier-timing.md
+      def validate_scheduled_at(order, travel_minutes: nil)
+        return nil if order.scheduled_at.blank?
+
+        min_lead_minutes =
+          if order.order_type_delivery?
+            DeliveryTimingService.min_lead_minutes(
+              travel_minutes: travel_minutes.presence || AppSettingsService.avg_travel_minutes
+            )
+          else
+            AppSettingsService.avg_cooking_minutes + AppSettingsService.delivery_buffer_minutes
+          end
+
+        earliest = Time.current + min_lead_minutes.minutes
+        return nil if order.scheduled_at >= earliest
+
+        "Выбранное время слишком близко. Минимум — через #{min_lead_minutes.ceil} мин (не раньше #{earliest.strftime('%H:%M')})"
+      end
+
+      # Для предзаказов считаем, когда кухне нужно начать готовить, чтобы
+      # курьер синхронно приехал к моменту готовности блюда — см.
+      # DeliveryTimingService и plans/scheduled-delivery-courier-timing.md.
+      # Для ASAP-заказов (без scheduled_at) не нужно — кухня начинает сразу.
+      def assign_cooking_start_planned_at(order, travel_minutes: nil)
+        return if order.scheduled_at.blank?
+
+        order.cooking_start_planned_at = DeliveryTimingService.cooking_start_planned_at(
+          target_delivery_at: order.scheduled_at,
+          travel_minutes: order.order_type_delivery? ? (travel_minutes.presence || AppSettingsService.avg_travel_minutes) : 0
+        )
       end
 
       def address_in_delivery_zone?(lat, lng)

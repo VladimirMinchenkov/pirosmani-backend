@@ -13,6 +13,8 @@ class OrderSerializer
       client_address: ClientAddressSerializer.new(@order.client_address).as_json,
       promo_code: @order.promo_code&.code,
       scheduled_at: @order.scheduled_at,
+      cooking_start_planned_at: @order.cooking_start_planned_at,
+      cooking_started_at: @order.cooking_started_at,
       total_price: @order.total_price.to_f,
       delivery_price: @order.delivery_price.to_f,
       bonus_points_used: @order.bonus_points_used,

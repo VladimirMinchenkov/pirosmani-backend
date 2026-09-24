@@ -40,6 +40,7 @@ gem 'bcrypt'          # для паролей админа
 gem 'rack-cors'       # чтобы фронт мог стучаться в API
 gem 'httparty'        # запросы к Яндекс.Картам/Доставке
 gem 'jwt'             # авторизация админки токеном
+gem 'good_job'        # персистентный (Postgres) scheduler для отложенных задач (предзаказы, вызов курьера)
 
 
 group :development, :test do

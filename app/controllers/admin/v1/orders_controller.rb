@@ -64,17 +64,21 @@ module Admin
         render json: { error: "Order not found" }, status: :not_found
       end
 
-      # Заявку на курьера создаём автоматически, когда кухня переводит заказ
-      # в "cooking" — к моменту готовности блюда курьер уже должен быть в пути.
+      # Когда кухня переводит заказ в "cooking" — фиксируем фактический момент
+      # старта готовки и планируем вызов курьера через GoodJob на момент,
+      # рассчитанный DeliveryTimingService (не сразу!), чтобы курьер приехал
+      # синхронно с готовностью блюда — см. plans/scheduled-delivery-courier-timing.md.
       # Только для доставки и только если заявка ещё не создана.
       def maybe_create_courier_claim!(previous_status)
         return unless @order.order_type_delivery?
         return unless previous_status != "cooking" && @order.status == "cooking"
         return if @order.yandex_claim_id.present?
 
-        YandexDeliveryClaimService.create_and_accept!(@order)
-      rescue YandexDeliveryClaimService::Error => e
-        Rails.logger.warn "[YandexDeliveryClaim] Failed to auto-create claim for order #{@order.id}: #{e.message}"
+        cooking_started_at = Time.current
+        claim_planned_at = DeliveryTimingService.claim_planned_at(cooking_started_at: cooking_started_at)
+
+        @order.update!(cooking_started_at: cooking_started_at, claim_planned_at: claim_planned_at)
+        ClaimCreationJob.set(wait_until: claim_planned_at).perform_later(@order.id)
       end
 
       def order_params

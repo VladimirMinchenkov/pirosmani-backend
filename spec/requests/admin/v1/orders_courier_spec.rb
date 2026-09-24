@@ -1,6 +1,8 @@
 require 'rails_helper'
 
 RSpec.describe "Admin courier tracking (mock mode)", type: :request do
+  include ActiveJob::TestHelper
+
   let(:admin_user) { create(:admin_user) }
   let(:headers) { auth_headers(admin_user) }
   let!(:client) { create(:client) }
@@ -8,12 +10,25 @@ RSpec.describe "Admin courier tracking (mock mode)", type: :request do
   let!(:order) { create(:order, client: client, client_address: client_address, order_type: "delivery", status: "pending") }
 
   describe "PATCH /admin/v1/orders/:id (status -> cooking)" do
-    it "auto-creates a mock courier claim" do
+    it "schedules ClaimCreationJob at claim_planned_at (не сразу — синхронизировано с готовностью еды)" do
       expect(order.yandex_claim_id).to be_nil
 
-      patch "/admin/v1/orders/#{order.id}", params: { order: { status: "cooking" } }, headers: headers
+      expect {
+        patch "/admin/v1/orders/#{order.id}", params: { order: { status: "cooking" } }, headers: headers
+      }.to have_enqueued_job(ClaimCreationJob).with(order.id)
 
       expect(response).to have_http_status(:ok)
+      order.reload
+      expect(order.cooking_started_at).to be_present
+      expect(order.claim_planned_at).to be_present
+      expect(order.yandex_claim_id).to be_nil # ещё не создана — джоб только запланирован
+    end
+
+    it "creates the mock courier claim once the scheduled job actually runs" do
+      perform_enqueued_jobs do
+        patch "/admin/v1/orders/#{order.id}", params: { order: { status: "cooking" } }, headers: headers
+      end
+
       order.reload
       expect(order.yandex_claim_id).to start_with("mock-")
       expect(order.claim_requested_at).to be_present
@@ -22,22 +37,23 @@ RSpec.describe "Admin courier tracking (mock mode)", type: :request do
       expect(order.courier_phone_masked).to be_present
     end
 
-    it "does not create a claim twice" do
+    it "does not schedule a claim twice" do
       patch "/admin/v1/orders/#{order.id}", params: { order: { status: "cooking" } }, headers: headers
       order.reload
-      first_claim_id = order.yandex_claim_id
+      first_claim_planned_at = order.claim_planned_at
 
       patch "/admin/v1/orders/#{order.id}", params: { order: { status: "delivering" } }, headers: headers
       order.reload
-      expect(order.yandex_claim_id).to eq(first_claim_id)
+      expect(order.claim_planned_at).to eq(first_claim_planned_at)
     end
 
-    it "does not create a claim for pickup orders" do
+    it "does not schedule a claim for pickup orders" do
       pickup_order = create(:order, :pickup, client: client, status: "pending")
 
       patch "/admin/v1/orders/#{pickup_order.id}", params: { order: { status: "cooking" } }, headers: headers
 
       pickup_order.reload
+      expect(pickup_order.cooking_started_at).to be_nil
       expect(pickup_order.yandex_claim_id).to be_nil
     end
   end

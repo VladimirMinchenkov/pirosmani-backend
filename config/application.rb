@@ -25,5 +25,10 @@ module PirosmaniBackend
     config.api_only = true
 
     config.active_storage.routes_prefix = '/rails/active_storage'
+
+    # GoodJob — персистентный (Postgres) ActiveJob adapter. Нужен для отложенных
+    # задач с горизонтом в часы (напоминание кухне начать готовить, вызов курьера
+    # для предзаказов) — переживает деплои/рестарты, в отличие от :async
+    config.active_job.queue_adapter = :good_job
   end
 end
