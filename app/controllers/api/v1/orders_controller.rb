@@ -87,21 +87,22 @@ module Api
       def resolve_delivery_price(order)
         return { value: 0.0 } if order.order_type_pickup?
 
+        lat = params.dig(:order, :lat)&.to_f || order.client_address&.lat&.to_f
+        lng = params.dig(:order, :lng)&.to_f || order.client_address&.lng&.to_f
+
+        # Всегда проверяем, что адрес в зоне доставки (защита от подделки estimated_cost)
+        unless lat && lng && address_in_delivery_zone?(lat, lng)
+          return { error: "Delivery not available here", status: :unprocessable_entity }
+        end
+
         if AppSettingsService.use_yandex_delivery?
           estimated = params.dig(:order, :estimated_cost)&.to_f
           if estimated && estimated > 0
             { value: estimated }
           else
-            # Fallback: пересчитываем через Yandex API
-            lat = params.dig(:order, :lat)&.to_f || order.client_address&.lat&.to_f
-            lng = params.dig(:order, :lng)&.to_f || order.client_address&.lng&.to_f
-            if lat && lng
-              result = YandexDeliveryService.calculate(lat: lat, lng: lng)
-              return { error: "Delivery not available here", status: :unprocessable_entity } unless result
-              { value: result[:price] }
-            else
-              { error: "Coordinates required for delivery", status: :unprocessable_entity }
-            end
+            result = YandexDeliveryService.calculate(lat: lat, lng: lng)
+            return { error: "Delivery not available here", status: :unprocessable_entity } unless result
+            { value: result[:price] }
           end
         else
           zone = order.delivery_zone || resolve_zone_from_params(order)
@@ -110,6 +111,10 @@ module Api
           order.delivery_zone = zone
           { value: zone.price.to_f }
         end
+      end
+
+      def address_in_delivery_zone?(lat, lng)
+        DeliveryZone.active.any? { |z| z.contains_point?(lat, lng) }
       end
 
       def resolve_zone_from_params(order)

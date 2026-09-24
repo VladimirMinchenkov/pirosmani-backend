@@ -6,7 +6,7 @@ class Order < ApplicationRecord
 
   has_many :order_items, dependent: :destroy
   has_many :menu_items, through: :order_items
-  has_many :bonus_transactions, dependent: :nullify
+  has_many :bonus_transactions, class_name: 'BonusTransaction', dependent: :nullify
 
   enum status: { pending: "pending", confirmed: "confirmed", cooking: "cooking", delivering: "delivering", done: "done", cancelled: "cancelled" }
   enum order_type: { delivery: "delivery", pickup: "pickup" }, _prefix: true
