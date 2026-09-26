@@ -3,8 +3,16 @@
 # см. plans/ecosystem-architecture.md) — только нажатия на inline-кнопки
 # "Принять"/"Отклонить" под уведомлением о новом заказе (callback_query).
 # Обычные текстовые сообщения боту в этом объёме не обрабатываются.
+#
+# Безопасность: без проверки подписи любой, кто знает формат callback_data
+# ("order:42:confirm"), может отправить сюда фейковый POST и изменить статус
+# чужого заказа без реального нажатия кнопки в Telegram. Защита —
+# заголовок X-Telegram-Bot-Api-Secret-Token, который Telegram присылает при
+# КАЖДОМ запросе к вебхуку, если secret_token был задан при setWebhook (см.
+# plans/telegram_delivery_bot_usage.md, раздел "Продакшен: secret_token").
 class Webhooks::TelegramController < ApplicationController
   skip_before_action :verify_authenticity_token, raise: false
+  before_action :verify_telegram_signature!
 
   CALLBACK_DATA_PATTERN = /\Aorder:(?<order_id>\d+):(?<action>confirm|cancel)\z/
 
@@ -17,6 +25,21 @@ class Webhooks::TelegramController < ApplicationController
   end
 
   private
+
+  # Если secret_token не настроен в credentials — проверка отключена (чтобы
+  # не ломать локальную разработку/старые окружения без него). В продакшене
+  # secret_token ОБЯЗАТЕЛЕН — см. plans/telegram_delivery_bot_usage.md.
+  def verify_telegram_signature!
+    expected = Rails.application.credentials.dig(:telegram, :webhook_secret_token)
+    return if expected.blank?
+
+    actual = request.headers["X-Telegram-Bot-Api-Secret-Token"]
+
+    unless actual.present? && ActiveSupport::SecurityUtils.secure_compare(actual, expected)
+      Rails.logger.warn("[Webhooks::TelegramController] Invalid or missing X-Telegram-Bot-Api-Secret-Token")
+      return render json: { error: "forbidden" }, status: :forbidden
+    end
+  end
 
   def handle_callback(callback)
     match = CALLBACK_DATA_PATTERN.match(callback[:data].to_s)

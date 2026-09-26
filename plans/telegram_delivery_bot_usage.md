@@ -114,6 +114,84 @@ curl "https://api.telegram.org/bot<ТОКЕН>/deleteWebhook"
 
 ---
 
+## Продакшен: secret_token (обязательно перед реальным запуском)
+
+**Проблема**: без проверки подписи любой, кто узнает формат `callback_data`
+(`order:42:confirm`), может отправить `POST /webhooks/telegram` напрямую и
+изменить статус чужого заказа без реального нажатия кнопки в Telegram:
+
+```bash
+curl -X POST https://api.pirosmani.by/webhooks/telegram \
+  -d '{"callback_query":{"id":"fake","data":"order:42:confirm"}}'
+```
+
+**Решение** — Telegram Bot API поддерживает `secret_token`: при каждом
+запросе к вебхуку Telegram присылает заголовок
+`X-Telegram-Bot-Api-Secret-Token`, который сверяется на стороне сервера
+([`Webhooks::TelegramController#verify_telegram_signature!`](app/controllers/webhooks/telegram_controller.rb)).
+Если secret_token не настроен в credentials — проверка молча отключена
+(для обратной совместимости с локальной разработкой), поэтому **перед
+продакшеном обязательно выполнить шаги ниже**.
+
+### Шаг 11. Сгенерировать и сохранить secret_token
+
+```bash
+cd ../pirosmani-backend
+EDITOR="code --wait" bin/rails credentials:edit
+```
+
+Добавить (случайная строка 16–32 символа, буквы/цифры/подчёркивания):
+
+```yaml
+telegram:
+  pirosmani_brest_delivery_bot_token: "ТОКЕН_БОТА"
+  webhook_secret_token: "случайная_строка_например_a1b2c3d4e5f6g7h8"
+```
+
+### Шаг 12. Указать secret_token при setWebhook
+
+```bash
+curl "https://api.telegram.org/bot<ТОКЕН>/setWebhook?url=https://api.pirosmani.by/webhooks/telegram&secret_token=случайная_строка_например_a1b2c3d4e5f6g7h8"
+```
+
+Значение `secret_token` в этом `curl` должно **точно совпадать** с тем, что
+сохранено в credentials на Шаге 11 — иначе все запросы от настоящего
+Telegram будут отклоняться с `403` (потому что заголовок не совпадёт).
+
+### Шаг 13. Перезапустить Rails
+
+Credentials читаются при старте процесса — после Шага 11 обязательно
+перезапустить `bin/rails s` (или передеплоить), иначе старое значение
+`webhook_secret_token` (`nil`) останется в памяти и проверка не заработает.
+
+### Проверка
+
+```bash
+# Без заголовка — должен вернуть 403
+curl -X POST https://api.pirosmani.by/webhooks/telegram \
+  -H "Content-Type: application/json" \
+  -d '{"update_id":123,"message":{"text":"test"}}'
+
+# С правильным заголовком — должен вернуть 200 (как обычный апдейт от Telegram)
+curl -X POST https://api.pirosmani.by/webhooks/telegram \
+  -H "Content-Type: application/json" \
+  -H "X-Telegram-Bot-Api-Secret-Token: случайная_строка_например_a1b2c3d4e5f6g7h8" \
+  -d '{"update_id":123,"callback_query":{"id":"test","data":"order:1:confirm"}}'
+```
+
+Реальные запросы от Telegram всегда содержат правильный заголовок
+автоматически — эта проверка невидима для легитимного трафика, только
+блокирует поддельные запросы.
+
+**TTL callback_data (опционально)**: можно дополнительно добавить в
+`callback_data` timestamp истечения (`order:42:confirm:1695745200`) и
+игнорировать нажатия старше 24 часов — защита от повторного использования
+кнопки через неделю. Это добивка для параноиков — `secret_token` уже
+закрывает основной вектор атаки (поддельные запросы от третьих лиц), TTL
+не реализован в текущей версии и не является блокером для продакшена.
+
+---
+
 ## Если что-то не работает — куда смотреть
 
 | Симптом | Причина | Проверка |
