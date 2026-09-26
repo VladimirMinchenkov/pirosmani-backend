@@ -22,6 +22,20 @@ RSpec.describe "Api::V1::Orders", type: :request do
   let!(:address) { client.client_addresses.create!(street: "Ул. Тест", lat: 55.05, lng: 37.05) }
 
   describe "POST /api/v1/orders (delivery)" do
+    it "уведомляет Telegram о новом заказе (best-effort, не блокирует создание)" do
+      expect(TelegramOrderNotifierService).to receive(:notify_new_order!)
+
+      post "/api/v1/orders", params: {
+        order: {
+          order_type: "delivery",
+          client_address_id: address.id,
+          order_items: [{ menu_item_id: menu_item.id, quantity: 1 }]
+        }
+      }, headers: headers
+
+      expect(response).to have_http_status(:created)
+    end
+
     it "creates an order with address, addons and calculates totals" do
       post "/api/v1/orders", params: {
         order: {

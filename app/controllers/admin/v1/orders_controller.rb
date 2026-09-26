@@ -18,10 +18,16 @@ module Admin
       end
 
       def update
-        previous_status = @order.status
-
-        if @order.update(order_params)
-          maybe_create_courier_claim!(previous_status)
+        # Статус — через общий OrderStatusUpdateService (та же логика, что
+        # используется из Telegram-вебхука при нажатии Принять/Отклонить —
+        # см. Webhooks::TelegramController), остальные поля — как раньше
+        if order_params[:status].present?
+          if OrderStatusUpdateService.update!(@order, status: order_params[:status])
+            render json: OrderSerializer.new(@order).as_json(include_internal: true)
+          else
+            render json: { errors: @order.errors.full_messages }, status: :unprocessable_entity
+          end
+        elsif @order.update(order_params)
           render json: OrderSerializer.new(@order).as_json(include_internal: true)
         else
           render json: { errors: @order.errors.full_messages }, status: :unprocessable_entity
@@ -76,23 +82,6 @@ module Admin
         @order = Order.includes(INCLUDES).find(params[:id])
       rescue ActiveRecord::RecordNotFound
         render json: { error: "Order not found" }, status: :not_found
-      end
-
-      # Когда кухня переводит заказ в "cooking" — фиксируем фактический момент
-      # старта готовки и планируем вызов курьера через GoodJob на момент,
-      # рассчитанный DeliveryTimingService (не сразу!), чтобы курьер приехал
-      # синхронно с готовностью блюда — см. plans/scheduled-delivery-courier-timing.md.
-      # Только для доставки и только если заявка ещё не создана.
-      def maybe_create_courier_claim!(previous_status)
-        return unless @order.order_type_delivery?
-        return unless previous_status != "cooking" && @order.status == "cooking"
-        return if @order.yandex_claim_id.present?
-
-        cooking_started_at = Time.current
-        claim_planned_at = DeliveryTimingService.claim_planned_at(cooking_started_at: cooking_started_at)
-
-        @order.update!(cooking_started_at: cooking_started_at, claim_planned_at: claim_planned_at)
-        ClaimCreationJob.set(wait_until: claim_planned_at).perform_later(@order.id)
       end
 
       def order_params

@@ -101,7 +101,12 @@ module Api
           current_client.spend_bonuses!(bonus_points_to_use, order: order) if bonus_points_to_use > 0
         end
 
-        render json: OrderSerializer.new(order.reload).as_json, status: :created
+        order.reload
+        # Уведомление в Telegram — best-effort, никогда не должно ронять
+        # создание заказа (сбой отправки просто логируется внутри сервиса)
+        TelegramOrderNotifierService.notify_new_order!(order)
+
+        render json: OrderSerializer.new(order).as_json, status: :created
       rescue ActiveRecord::RecordInvalid => e
         render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
       rescue ActiveRecord::RecordNotFound
