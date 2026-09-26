@@ -6,7 +6,7 @@ module Admin
         { order_items: [:menu_item, :combo, :order_item_addons] }
       ].freeze
 
-      before_action :set_order, only: [:show, :update, :courier, :create_courier_claim, :call_courier]
+      before_action :set_order, only: [:show, :update, :courier, :create_courier_claim, :call_courier, :cancel_courier_claim]
 
       def index
         orders = Order.includes(INCLUDES).order(created_at: :desc)
@@ -52,6 +52,20 @@ module Admin
       # Возвращает подменный номер (masked) для звонка курьеру
       def call_courier
         render json: YandexDeliveryTrackingService.call_courier(@order)
+      rescue YandexDeliveryClaimService::Error => e
+        render json: { error: e.message }, status: :service_unavailable
+      end
+
+      # POST /admin/v1/orders/:id/cancel_courier_claim
+      # Отмена уже созданной заявки на курьера — нужна и для ручного
+      # fire-drill теста реального Yandex-контура (создать заявку → сразу
+      # отменить до приезда на точку А), и как обычная admin-функция на
+      # случай реальных проблем с заказом. allow_paid=true подтверждает
+      # платную отмену (курьер уже назначен/выехал).
+      def cancel_courier_claim
+        allow_paid = ActiveModel::Type::Boolean.new.cast(params[:allow_paid])
+        YandexDeliveryClaimService.cancel!(@order, allow_paid: allow_paid)
+        render json: YandexDeliveryTrackingService.snapshot(@order)
       rescue YandexDeliveryClaimService::Error => e
         render json: { error: e.message }, status: :service_unavailable
       end

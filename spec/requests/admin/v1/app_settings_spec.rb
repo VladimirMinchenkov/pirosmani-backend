@@ -42,6 +42,19 @@ RSpec.describe "Admin::V1::AppSettings", type: :request do
   end
 
   describe 'cafe_address geocoding' do
+    # WebMock блокирует все нестабленные реальные HTTP-запросы (в т.ч. к
+    # Geoapify) — стабим ответ явно, вместо того чтобы полагаться на реальную
+    # сеть. WebMock::NetConnectNotAllowedError наследуется от Exception (не
+    # StandardError), поэтому бare `rescue => e` в контроллере его не ловит.
+    before do
+      stub_request(:get, /api\.geoapify\.com\/v1\/geocode\/search/)
+        .to_return(
+          status: 200,
+          body: { results: [{ "lat" => 52.0975, "lon" => 23.7 }] }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+    end
+
     it 'auto-creates cafe_lat and cafe_lng when cafe_address is saved' do
       # Создаём адрес кафе — контроллер должен вызвать геокодирование
       post '/admin/v1/app_settings',
@@ -54,7 +67,8 @@ RSpec.describe "Admin::V1::AppSettings", type: :request do
       lat = AppSetting.find_by(key: 'cafe_lat')
       lng = AppSetting.find_by(key: 'cafe_lng')
 
-      # Если Geoapify недоступен, координаты не создадутся — это ок
+      # Если credentials для Geoapify не настроены (blank api_key) — геокодинг
+      # не вызывается вообще, это тоже ок в тестовом окружении
       if lat && lng
         expect(lat.value.to_f).to be_between(52.0, 52.2)
         expect(lng.value.to_f).to be_between(23.5, 23.9)
@@ -71,7 +85,7 @@ RSpec.describe "Admin::V1::AppSettings", type: :request do
             headers: headers
 
       expect(response).to have_http_status(:ok)
-      # Координаты должны обновиться (если Geoapify доступен)
+      # Координаты должны обновиться (если credentials для Geoapify настроены)
     end
   end
 end

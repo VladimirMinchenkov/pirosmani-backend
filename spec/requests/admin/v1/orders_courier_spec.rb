@@ -100,4 +100,42 @@ RSpec.describe "Admin courier tracking (mock mode)", type: :request do
       expect(json["forwarding_number"]).to eq(order.reload.courier_phone_masked)
     end
   end
+
+  describe "POST /admin/v1/orders/:id/cancel_courier_claim" do
+    it "отменяет mock-заявку" do
+      YandexDeliveryClaimService.create_and_accept!(order)
+
+      post "/admin/v1/orders/#{order.id}/cancel_courier_claim", headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(order.reload.yandex_claim_status).to eq("cancelled")
+    end
+
+    it "возвращает 503 с сообщением ошибки, если Yandex недоступен (real mode)" do
+      AppSetting.create!(key: "yandex_courier_mode", value: "real")
+      order.update!(yandex_claim_id: "claim-123", yandex_claim_status: "performer_found")
+      stub_request(:post, %r{/v2/claims/cancel-info/claim-123}).to_return(status: 500, body: "boom")
+
+      post "/admin/v1/orders/#{order.id}/cancel_courier_claim", headers: headers
+
+      expect(response).to have_http_status(:service_unavailable)
+      expect(JSON.parse(response.body)["error"]).to be_present
+    end
+
+    it "прокидывает allow_paid=true в YandexDeliveryClaimService.cancel!" do
+      AppSetting.create!(key: "yandex_courier_mode", value: "real")
+      order.update!(yandex_claim_id: "claim-123", yandex_claim_status: "performer_found")
+      stub_request(:post, %r{/v2/claims/cancel-info/claim-123})
+        .to_return(status: 200, body: { cancel_state: "paid" }.to_json, headers: { "Content-Type" => "application/json" })
+      stub_request(:post, %r{/v2/claims/info/claim-123})
+        .to_return(status: 200, body: { version: 1 }.to_json, headers: { "Content-Type" => "application/json" })
+      stub_request(:post, %r{/v2/claims/cancel/claim-123})
+        .to_return(status: 200, body: { status: "cancelled" }.to_json, headers: { "Content-Type" => "application/json" })
+
+      post "/admin/v1/orders/#{order.id}/cancel_courier_claim", params: { allow_paid: true }, headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(order.reload.yandex_claim_status).to eq("cancelled")
+    end
+  end
 end

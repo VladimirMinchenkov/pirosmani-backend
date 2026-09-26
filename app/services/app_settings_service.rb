@@ -30,10 +30,14 @@ class AppSettingsService
     delivery_mode == 'internal'
   end
 
-  # Режим вызова курьера через Yandex Delivery Claims API:
+  # Режим вызова курьера через Yandex Delivery Claims API. По ответу поддержки
+  # Яндекса отдельного sandbox-контура НЕ существует — есть только один
+  # (реальный) аккаунт; "тестирование" там означает реальную заявку с
+  # реальным исполнителем (с последующей платной отменой до приезда на точку А
+  # или инструкцией исполнителю не забирать физический товар). Поэтому режимов
+  # только два:
   # - mock: без единого реального запроса к Яндексу, всё симулируется по времени
-  # - sandbox: тестовый контур Яндекса (нужны sandbox credentials)
-  # - production: боевой контур
+  # - real: единственный существующий (боевой) контур Yandex Delivery
   def self.yandex_courier_mode
     AppSetting.find_by(key: 'yandex_courier_mode')&.value || 'mock'
   end
@@ -42,7 +46,7 @@ class AppSettingsService
     yandex_courier_mode == 'mock'
   end
 
-  def self.yandex_courier_sandbox?
-    yandex_courier_mode == 'sandbox'
+  def self.yandex_courier_real?
+    !yandex_courier_mock?
   end
 end

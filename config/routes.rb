@@ -89,6 +89,7 @@ Rails.application.routes.draw do
           get :courier
           post :create_courier_claim
           post :call_courier
+          post :cancel_courier_claim
         end
       end
       resources :clients
@@ -102,6 +103,7 @@ Rails.application.routes.draw do
   # Webhooks для внешних сервисов
   namespace :webhooks do
     post :telegram, to: 'telegram#create'
+    post :yandex_delivery, to: 'yandex_delivery#create'
   end
 end
 
