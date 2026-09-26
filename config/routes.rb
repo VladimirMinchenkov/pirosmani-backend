@@ -8,6 +8,10 @@ Rails.application.routes.draw do
         post :refresh, on: :collection
       end
 
+      # Авторизация для pirosmani-telegram-app (Telegram Mini App) через
+      # initData вместо телефон+OTP — см. plans/telegram-mini-app-plan.md
+      post :telegram_sessions, to: 'telegram_sessions#create'
+
       # Корзина и товары
       resource :cart, only: [:show, :update, :destroy]
       resources :cart_items, only: [:create, :update, :destroy]

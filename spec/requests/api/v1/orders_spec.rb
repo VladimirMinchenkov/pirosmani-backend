@@ -21,6 +21,20 @@ RSpec.describe "Api::V1::Orders", type: :request do
   end
   let!(:address) { client.client_addresses.create!(street: "Ул. Тест", lat: 55.05, lng: 37.05) }
 
+  describe "POST /api/v1/orders — клиент без телефона (Telegram Mini App до requestContact)" do
+    it "отказывает в создании заказа с понятной ошибкой" do
+      telegram_client = Client.create!(telegram_user_id: 123456, name: "Гость", phone: nil)
+      tg_headers = { "Authorization" => "Bearer #{Auth::JwtService.encode(client_id: telegram_client.id)}" }
+
+      post "/api/v1/orders", params: {
+        order: { order_type: "pickup", order_items: [{ menu_item_id: menu_item.id, quantity: 1 }] }
+      }, headers: tg_headers
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["error"]).to match(/номер телефона/)
+    end
+  end
+
   describe "POST /api/v1/orders (delivery)" do
     it "уведомляет Telegram о новом заказе (best-effort, не блокирует создание)" do
       expect(TelegramOrderNotifierService).to receive(:notify_new_order!)

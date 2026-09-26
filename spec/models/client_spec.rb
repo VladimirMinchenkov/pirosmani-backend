@@ -1,6 +1,19 @@
 require 'rails_helper'
 
 RSpec.describe Client, type: :model do
+  describe "валидация phone" do
+    it "требует phone для обычного клиента (телефон+OTP)" do
+      client = Client.new(phone: nil, name: "Тест")
+      expect(client).not_to be_valid
+      expect(client.errors[:phone]).to be_present
+    end
+
+    it "не требует phone для Telegram-клиента (telegram_user_id присутствует)" do
+      client = Client.new(telegram_user_id: 123, name: "Тест", phone: nil)
+      expect(client).to be_valid
+    end
+  end
+
   describe "bonus methods" do
     let(:client) { create(:client, bonus_points: 200) }
     let(:order) { create(:order, client: client, total_price: 45.50) }

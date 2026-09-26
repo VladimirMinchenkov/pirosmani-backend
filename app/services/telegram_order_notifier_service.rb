@@ -6,7 +6,7 @@
 # же сообщение (editMessageText), а не шлём новое.
 #
 # Настройка: AppSettingsService.telegram_orders_chat_id (куда слать) +
-# Rails.application.credentials.dig(:telegram, :bot_token) (токен бота).
+# Rails.application.credentials.dig(:telegram, :pirosmani_brest_delivery_bot_token) (токен бота).
 # Если что-то из этого не настроено — методы тихо ничего не делают (сбой
 # уведомления НИКОГДА не должен ронять создание/обновление заказа).
 #
@@ -163,6 +163,6 @@ class TelegramOrderNotifierService
   end
 
   def bot_token
-    Rails.application.credentials.dig(:telegram, :bot_token)
+    Rails.application.credentials.dig(:telegram, :pirosmani_brest_delivery_bot_token)
   end
 end

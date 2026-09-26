@@ -47,6 +47,16 @@ module Api
       end
 
       def create
+        # Явная проверка телефона — раньше это гарантировалось валидацией
+        # Client.phone (presence: true), но с появлением Telegram Mini App
+        # (см. plans/telegram-mini-app-plan.md) валидация модели ослаблена
+        # для telegram_user_id?, чтобы Client мог существовать до
+        # requestContact. Заказ без телефона всё равно недопустим — нужен
+        # для SMS-уведомлений и колбека курьера.
+        if current_client.phone.blank?
+          return render json: { error: "Для оформления заказа нужен номер телефона" }, status: :unprocessable_entity
+        end
+
         order = build_order
 
         # Проверка "кафе открыто прямо сейчас" нужна только для ASAP-заказов —

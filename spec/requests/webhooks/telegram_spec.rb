@@ -11,7 +11,7 @@ RSpec.describe "Webhooks::Telegram", type: :request do
   end
 
   before do
-    allow(Rails.application.credentials).to receive(:dig).with(:telegram, :bot_token).and_return("test-bot-token")
+    allow(Rails.application.credentials).to receive(:dig).with(:telegram, :pirosmani_brest_delivery_bot_token).and_return("test-bot-token")
   end
 
   describe "POST /webhooks/telegram" do

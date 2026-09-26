@@ -12,7 +12,7 @@ RSpec.describe TelegramOrderNotifierService do
 
   before do
     AppSetting.create!(key: "telegram_orders_chat_id", value: "-100123456")
-    allow(Rails.application.credentials).to receive(:dig).with(:telegram, :bot_token).and_return("test-bot-token")
+    allow(Rails.application.credentials).to receive(:dig).with(:telegram, :pirosmani_brest_delivery_bot_token).and_return("test-bot-token")
   end
 
   describe "#notify_new_order!" do

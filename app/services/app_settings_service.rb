@@ -53,7 +53,8 @@ class AppSettingsService
   # chat_id/username канала или группы в Telegram, куда шлём уведомления о
   # новых заказах (замена стороннего платного бота — pirosmani-telegram-orders,
   # см. plans/ecosystem-architecture.md). Bot token — в Rails credentials
-  # (:telegram, :bot_token), не в AppSetting, по аналогии с yandex_delivery.
+  # (:telegram, :pirosmani_brest_delivery_bot_token), не в AppSetting, по
+  # аналогии с yandex_delivery.
   def self.telegram_orders_chat_id
     AppSetting.find_by(key: "telegram_orders_chat_id")&.value
   end

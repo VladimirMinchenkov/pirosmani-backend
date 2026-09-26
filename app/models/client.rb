@@ -4,8 +4,15 @@ class Client < ApplicationRecord
   has_many :refresh_tokens, dependent: :destroy
   has_many :bonus_transactions, class_name: 'BonusTransaction', dependent: :destroy
 
+  # Для Telegram Mini App (см. plans/telegram-mini-app-plan.md, раздел 1.4)
+  # телефон необязателен на уровне модели — initData не гарантирует phone без
+  # явного requestContact на фронте. Заказ без телефона всё равно не пройдёт
+  # (см. Api::V1::OrdersController#create) — эта проверка сделана явно там,
+  # а не через валидацию модели, чтобы не блокировать сам факт создания
+  # Telegram-клиента до того, как он поделился номером.
   validates :phone, presence: { message: "Телефон обязателен" },
-                    uniqueness: { message: "Телефон уже зарегистрирован" }
+                    uniqueness: { message: "Телефон уже зарегистрирован" },
+                    unless: :telegram_user_id?
 
   # Начислить бонусы клиенту (вызывается когда заказ выполнен)
   # amount — количество бонусов (= floor(сумма заказа в BYN))

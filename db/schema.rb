@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_26_112115) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_26_172055) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -169,7 +169,11 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_26_112115) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "bonus_points", default: 0, null: false
+    t.bigint "telegram_user_id"
+    t.string "telegram_username"
+    t.string "telegram_first_name"
     t.index ["phone"], name: "index_clients_on_phone", unique: true
+    t.index ["telegram_user_id"], name: "index_clients_on_telegram_user_id", unique: true, where: "(telegram_user_id IS NOT NULL)"
   end
 
   create_table "combo_items", force: :cascade do |t|
