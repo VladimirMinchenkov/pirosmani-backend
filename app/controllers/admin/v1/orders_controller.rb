@@ -10,11 +10,11 @@ module Admin
 
       def index
         orders = Order.includes(INCLUDES).order(created_at: :desc)
-        render json: orders.map { |order| OrderSerializer.new(order).as_json }
+        render json: orders.map { |order| OrderSerializer.new(order).as_json(include_internal: true) }
       end
 
       def show
-        render json: OrderSerializer.new(@order).as_json
+        render json: OrderSerializer.new(@order).as_json(include_internal: true)
       end
 
       def update
@@ -22,7 +22,7 @@ module Admin
 
         if @order.update(order_params)
           maybe_create_courier_claim!(previous_status)
-          render json: OrderSerializer.new(@order).as_json
+          render json: OrderSerializer.new(@order).as_json(include_internal: true)
         else
           render json: { errors: @order.errors.full_messages }, status: :unprocessable_entity
         end

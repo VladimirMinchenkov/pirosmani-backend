@@ -37,6 +37,9 @@ RSpec.describe "Api::V1::Orders", type: :request do
       json = JSON.parse(response.body)
       expect(json["order_type"]).to eq("delivery")
       expect(json["status"]).to eq("pending")
+      # Внутренняя себестоимость доставки (реальная цена заявки Yandex) —
+      # не для клиента, только для админки (см. Admin::V1::OrdersController)
+      expect(json).not_to have_key("yandex_actual_claim_price")
       expect(json["delivery_price"]).to eq(50.0)
       expect(json["total_price"]).to eq((150 * 2) + (20 * 2) + 50.0)
       expect(json["order_items"].first["addons"].first["name"]).to eq("Соус")

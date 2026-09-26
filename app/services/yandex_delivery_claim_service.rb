@@ -98,10 +98,24 @@ class YandexDeliveryClaimService
       body: { version: created["version"] }
     )
 
+    # Реальная цена заявки — то, что Yandex фактически спишет с кафе в конце
+    # месяца, В ОТЛИЧИЕ от order.delivery_price (оценка check-price на
+    # чекауте, которую видел и оплатил гость). Разрыв между ними — риск
+    # бизнеса (см. plans/yandex-delivery-fire-drill-guide.md), поэтому
+    # сохраняем обе цены для сравнения в админке, а не только для клиента.
+    actual_price = extract_actual_price(created) || extract_actual_price(accepted)
+
+    # Предварительное ETA до точки Б — доступно СРАЗУ из ответа claims/create,
+    # не дожидаясь вебхука performer_found/points-eta. Показываем гостю
+    # немедленно после оформления, вместо "точность появится позже".
+    eta_minutes = extract_eta_minutes(created) || extract_eta_minutes(accepted)
+
     @order.update!(
       yandex_claim_id: claim_id,
       yandex_claim_status: accepted["status"] || created["status"] || "new",
-      claim_requested_at: Time.current
+      claim_requested_at: Time.current,
+      yandex_actual_claim_price: actual_price,
+      yandex_claim_eta_minutes: eta_minutes
     )
     @order
   rescue Error
@@ -109,6 +123,45 @@ class YandexDeliveryClaimService
   rescue StandardError => e
     Rails.logger.error("[YandexDeliveryClaimService] create_real! failed: #{e.message}")
     raise Error, "Failed to create Yandex Delivery claim: #{e.message}"
+  end
+
+  # TODO(live-verify): точное расположение цены в ответе claims/create нужно
+  # уточнить по факту первого живого вызова — пробуем несколько разумных
+  # вариантов структуры ответа Yandex Delivery Cargo API v2 (pricing.offer.price,
+  # pricing.total_price, offer_price, price), ни один не считается финальным
+  # до проверки на реальном аккаунте.
+  def extract_actual_price(response)
+    candidate =
+      response.dig("pricing", "offer", "price") ||
+      response.dig("pricing", "total_price") ||
+      response.dig("pricing", "price") ||
+      response["offer_price"] ||
+      response["price"]
+
+    candidate.present? ? candidate.to_s.to_f : nil
+  end
+
+  # TODO(live-verify): аналогично цене — точное расположение ETA в ответе
+  # claims/create не подтверждено живым вызовом. Пробуем: верхнеуровневый
+  # "eta" (секунды, как у check-price — см. YandexDeliveryService), запись
+  # destination в route_points (eta_sec/eta), и pricing.offer.eta.
+  def extract_eta_minutes(response)
+    seconds =
+      response["eta_sec"] ||
+      destination_route_point(response)&.dig("eta_sec") ||
+      destination_route_point(response)&.dig("eta")&.then { |v| v.to_f * 60 } ||
+      response.dig("pricing", "offer", "eta_sec")
+
+    minutes_from_seconds = seconds.present? ? (seconds.to_f / 60.0).ceil : nil
+    return minutes_from_seconds if minutes_from_seconds
+
+    # Верхнеуровневый "eta" в минутах (как у check-price/YandexDeliveryService)
+    top_level_eta = response["eta"]
+    top_level_eta.present? ? top_level_eta.to_f.ceil : nil
+  end
+
+  def destination_route_point(response)
+    Array(response["route_points"]).find { |p| p["type"] == "destination" }
   end
 
   def cancel_real!(allow_paid:)
@@ -224,11 +277,26 @@ class YandexDeliveryClaimService
     request.body = body.to_json
 
     response = http.request(request)
-    unless response.code.to_i.between?(200, 299)
-      raise "Yandex API error #{response.code} for #{path}: #{response.body}"
-    end
+    raise_yandex_error!(response, path) unless response.code.to_i.between?(200, 299)
 
     response.body.present? ? JSON.parse(response.body) : {}
+  end
+
+  # Осмысленная причина отказа (например, "тариф недоступен для маршрута")
+  # вместо голого дампа тела ответа — Yandex Cargo API обычно возвращает
+  # структурированную ошибку с полем message/code. Если распарсить не
+  # получилось — используем исходное тело как фолбэк, чтобы не потерять
+  # диагностическую информацию.
+  # TODO(live-verify): точная структура тела ошибки Yandex (message/code/
+  # errors[].message) не подтверждена живым вызовом.
+  def raise_yandex_error!(response, path)
+    parsed = JSON.parse(response.body) rescue nil
+    reason =
+      parsed &&
+      (parsed["message"] || parsed.dig("errors", 0, "message") || parsed["code"] || parsed["description"])
+
+    detail = reason || response.body
+    raise "Yandex API error #{response.code} for #{path}: #{detail}"
   end
 
   def api_key

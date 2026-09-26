@@ -64,6 +64,16 @@ RSpec.describe "Admin courier tracking (mock mode)", type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
+    it "включает yandex_actual_claim_price в ответ /admin/v1/orders/:id для сравнения с delivery_price" do
+      order.update!(delivery_price: 5.0, yandex_actual_claim_price: 10.0)
+
+      get "/admin/v1/orders/#{order.id}", headers: headers
+
+      json = JSON.parse(response.body)
+      expect(json["yandex_actual_claim_price"]).to eq(10.0)
+      expect(json["delivery_price"]).to eq(5.0)
+    end
+
     it "returns snapshot after claim is created" do
       YandexDeliveryClaimService.create_and_accept!(order)
 

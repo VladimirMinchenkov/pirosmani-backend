@@ -64,6 +64,65 @@ RSpec.describe YandexDeliveryClaimService do
         expect(order.claim_requested_at).to be_present
       end
 
+      it "сохраняет реальную цену заявки (pricing.offer.price) для сравнения с order.delivery_price" do
+        stub_request(:post, %r{/v2/claims/create})
+          .to_return(
+            status: 200,
+            body: { id: "claim-123", version: 1, status: "new", pricing: { offer: { price: "10.00" } } }.to_json,
+            headers: { "Content-Type" => "application/json" }
+          )
+        stub_request(:post, %r{/v2/claims/accept/claim-123})
+          .to_return(status: 200, body: { status: "accepted" }.to_json, headers: { "Content-Type" => "application/json" })
+
+        described_class.create_and_accept!(order)
+
+        expect(order.reload.yandex_actual_claim_price).to eq(10.0)
+      end
+
+      it "не падает, если Yandex не вернул поле цены" do
+        stub_request(:post, %r{/v2/claims/create})
+          .to_return(status: 200, body: { id: "claim-123", version: 1, status: "new" }.to_json, headers: { "Content-Type" => "application/json" })
+        stub_request(:post, %r{/v2/claims/accept/claim-123})
+          .to_return(status: 200, body: { status: "accepted" }.to_json, headers: { "Content-Type" => "application/json" })
+
+        described_class.create_and_accept!(order)
+
+        expect(order.reload.yandex_actual_claim_price).to be_nil
+      end
+
+      it "сохраняет предварительное ETA (route_points destination.eta_sec) — доступно сразу, без вебхука" do
+        stub_request(:post, %r{/v2/claims/create})
+          .to_return(
+            status: 200,
+            body: {
+              id: "claim-123", version: 1, status: "new",
+              route_points: [
+                { type: "source", eta_sec: 0 },
+                { type: "destination", eta_sec: 900 }
+              ]
+            }.to_json,
+            headers: { "Content-Type" => "application/json" }
+          )
+        stub_request(:post, %r{/v2/claims/accept/claim-123})
+          .to_return(status: 200, body: { status: "accepted" }.to_json, headers: { "Content-Type" => "application/json" })
+
+        described_class.create_and_accept!(order)
+
+        expect(order.reload.yandex_claim_eta_minutes).to eq(15) # 900 сек = 15 мин
+      end
+
+      it "поднимает Error с осмысленной причиной отказа, если тариф недоступен для маршрута" do
+        stub_request(:post, %r{/v2/claims/create})
+          .to_return(
+            status: 400,
+            body: { message: "no_such_tariff: route is not covered by any available tariff" }.to_json,
+            headers: { "Content-Type" => "application/json" }
+          )
+
+        expect { described_class.create_and_accept!(order) }
+          .to raise_error(described_class::Error, /route is not covered by any available tariff/)
+      end
+
       it "поднимает Error, если Yandex вернул ошибку" do
         stub_request(:post, %r{/v2/claims/create}).to_return(status: 500, body: "boom")
 

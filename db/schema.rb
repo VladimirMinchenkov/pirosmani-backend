@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_26_000002) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_26_111412) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -424,6 +424,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_26_000002) do
     t.datetime "cooking_start_planned_at"
     t.datetime "cooking_started_at"
     t.datetime "claim_planned_at"
+    t.decimal "yandex_actual_claim_price", precision: 10, scale: 2
+    t.integer "yandex_claim_eta_minutes"
     t.index ["client_address_id"], name: "index_orders_on_client_address_id"
     t.index ["client_id"], name: "index_orders_on_client_id"
     t.index ["delivery_zone_id"], name: "index_orders_on_delivery_zone_id"
